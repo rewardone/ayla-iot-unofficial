@@ -7,10 +7,10 @@ Documentation can be found at:
  - https://docs.aylanetworks.com/cloud-services/api-browser/
 """
 
-import aiohttp                              # async http
-import requests                             # http request library
-from datetime import datetime, timedelta    # datetime operations
-from typing import Dict, List, Optional     # object types
+from aiohttp    import ClientSession             # async http
+from requests   import post, request, Response   # http request library
+from datetime   import datetime, timedelta       # datetime operations
+from typing     import Dict, List, Optional      # object types
 
 # Custom error handling 
 from .exc import (
@@ -21,11 +21,11 @@ from .exc import (
     AylaReadOnlyPropertyError,
 )
 
-from .device import Device
+from .device import Device, Vacuum, Softener
 
 _session = None
 
-def new_ayla_api(username: str, password: str, app_id: str, app_secret: str, websession: Optional[aiohttp.ClientSession] = None, europe: bool = False):
+def new_ayla_api(username: str, password: str, app_id: str, app_secret: str, websession: Optional[ClientSession] = None, europe: bool = False):
     """Get an AylaApi object"""
     if europe:
         return AylaApi(username, password, app_id, app_secret, websession=websession, europe=europe)
@@ -42,7 +42,7 @@ class AylaApi:
             password: str,
             app_id: str,
             app_secret: str,
-            websession: Optional[aiohttp.ClientSession] = None,
+            websession: Optional[ClientSession] = None,
             europe: bool = False):
         self._email             = username      # username should always be an email address
         self._password          = password
@@ -59,10 +59,10 @@ class AylaApi:
         self.user_field_url     = "https://user-field.aylanetworks.com"
         self.ads_url            = "https://ads-field.aylanetworks.com"
 
-    async def ensure_session(self) -> aiohttp.ClientSession:
+    async def ensure_session(self) -> ClientSession:
         """Ensure that we have an aiohttp ClientSession"""
         if self.websession is None:
-            self.websession = aiohttp.ClientSession()
+            self.websession = ClientSession()
         return self.websession
 
     @property
@@ -75,6 +75,11 @@ class AylaApi:
                 "application": {"app_id": self._app_id, "app_secret": self._app_secret},
             }
         }
+
+    @property
+    def _sign_out_data(self) -> Dict:
+        """Payload for the sign_out call"""
+        return {"user": {"access_token": self._access_token}}
 
     def _set_credentials(self, status_code: int, login_result: Dict):
         """Update the internal credentials store. This tracks current bearer token and data needed for token refresh."""
@@ -95,13 +100,13 @@ class AylaApi:
     def sign_in(self):
         """Authenticate to Ayla API synchronously using a POST with credentials."""
         login_data = self._login_data   # get a map for JSON formatting
-        resp = requests.post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_in.json", json=login_data)
+        resp = post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_in.json", json=login_data)
         self._set_credentials(resp.status_code, resp.json())
 
     def refresh_auth(self):
         """Refresh the authentication synchronously using object tracked refresh token."""
         refresh_data = {"user": {"refresh_token": self._refresh_token}}
-        resp = requests.post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/refresh_token.json", json=refresh_data)
+        resp = post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/refresh_token.json", json=refresh_data)
         self._set_credentials(resp.status_code, resp.json())
 
     async def async_sign_in(self):
@@ -118,11 +123,6 @@ class AylaApi:
         async with session.post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/refresh_token.json", json=refresh_data) as resp:
             self._set_credentials(resp.status, await resp.json())
 
-    @property
-    def sign_out_data(self) -> Dict:
-        """Payload for the sign_out call"""
-        return {"user": {"access_token": self._access_token}}
-
     def _clear_auth(self):
         """Clear authentication state"""
         self._is_authed         = False
@@ -132,13 +132,13 @@ class AylaApi:
 
     def sign_out(self):
         """Sign out and invalidate the access token synchronously"""
-        requests.post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_out.json", json=self.sign_out_data)
+        post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_out.json", json=self._sign_out_data)
         self._clear_auth()
 
     async def async_sign_out(self):
         """Sign out and invalidate the access token asynchronously"""
         session = await self.ensure_session()
-        async with session.post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_out.json", json=self.sign_out_data) as _:
+        async with session.post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_out.json", json=self._sign_out_data) as _:
             pass
         self._clear_auth()
 
@@ -193,10 +193,10 @@ class AylaApi:
         headers.update(self.auth_header)
         return headers
 
-    def request(self, method: str, url: str, **kwargs) -> requests.Response:
+    def self_request(self, method: str, url: str, **kwargs) -> Response:
         """Perform an arbitrary request using the requests library synchronously"""
         headers = self._get_headers(kwargs)
-        return requests.request(method, url, headers=headers, **kwargs)
+        return request(method, url, headers=headers, **kwargs)
 
     async def async_request(self, http_method: str, url: str, **kwargs):
         """Perform an arbitrary request using the aiohttp library asynchronously"""
@@ -204,9 +204,25 @@ class AylaApi:
         headers = self._get_headers(kwargs)
         return session.request(http_method, url, headers=headers, **kwargs)
 
+    def get_user_profile(self) -> Dict[str, str]:
+        """Get user profile synchronously"""
+        resp = self.self_request("get", f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/get_user_profile.json")
+        response = resp.json()
+        if resp.status_code == 401:
+            raise AylaAuthError(response)
+        return response
+    
+    async def async_get_user_profile(self) -> Dict[str, str]:
+        """Get user profile asynchronously"""
+        async with await self.async_request("get", f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/get_user_profile.json") as resp:
+            response = await resp.json()
+            if resp.status == 401:
+                raise AylaAuthError()
+        return response
+
     def list_devices(self) -> List[Dict]:
         """List devices synchronously"""
-        resp = self.request("get", f"{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/devices.json")
+        resp = self.self_request("get", f"{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/devices.json")
         devices = resp.json()
         if resp.status_code == 401:
             raise AylaAuthError(devices["error"]["message"])
@@ -222,18 +238,32 @@ class AylaApi:
 
     def get_devices(self, update: bool = True) -> List[Device]:
         """Retrieve a device object of devices. Ability to update with metadata. Synchronous."""
-        devices = [Device(self, d, europe=self.europe) for d in self.list_devices()]
+        devices = list()
+        for d in self.list_devices():
+            if d["product_name"] in ["Vacuum","SharkIQ"]:
+                devices.append(Vacuum(self, d, europe=self.europe))
+            elif d["product_name"] in ["Softener"]:
+                devices.append(Softener(self, d, europe=self.europe))
+            else:
+                devices.append(Device(self, d, europe=self.europe))
         if update:
             for device in devices:
-                device.get_metadata()
-                device.update()
+                device._update_metadata()       # update serial number if needed
+                device.update()                 # obtain all properties
         return devices
 
     async def async_get_devices(self, update: bool = True) -> List[Device]:
         """Retrieve a device object of devices. Ability to update with metadata. Asynchronous."""
-        devices = [Device(self, d, europe=self.europe) for d in await self.async_list_devices()]
+        devices = list()
+        for d in await self.async_list_devices():
+            if d["product_name"] in ["Vacuum","SharkIQ"]:
+                devices.append(Vacuum(self, d, europe=self.europe))
+            elif d["product_name"] in ["Softener"]:
+                devices.append(Softener(self, d, europe=self.europe))
+            else:
+                devices.append(Device(self, d, europe=self.europe))
         if update:
             for device in devices:
-                await device.async_get_metadata()
-                await device.async_update()
+                await device._update_metadata() # update serial number if needed
+                await device.async_update()     # obtain all properties
         return devices
