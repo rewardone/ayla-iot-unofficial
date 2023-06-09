@@ -2,7 +2,7 @@ import pathlib
 from setuptools import setup
 
 try:
-    import re2 as re
+    from re2 import findall, M
 except ImportError:
     import re
 
@@ -17,7 +17,7 @@ README = (HERE / "README.md").read_text()
 # Pull the version from __init__.py so we don't need to maintain it in multiple places
 init_txt = (HERE / packages[0] / "__init__.py").read_text("utf-8")
 try:
-    version = re.findall(r"^__version__ = ['\"]([^'\"]+)['\"]\r?$", init_txt, re.M)[0]
+    version = findall(r"^__version__ = ['\"]([^'\"]+)['\"]\r?$", init_txt, M)[0]
 except IndexError:
     raise RuntimeError('Unable to determine version.')
 

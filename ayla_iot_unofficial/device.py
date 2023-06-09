@@ -224,7 +224,7 @@ class Device:
             resp_data = await resp.json()
         self.properties_full[property_name].update(resp_data)
 
-    def _clean_property_name(raw_property_name: str) -> str:
+    def _clean_property_name(self, raw_property_name: str) -> str:
         """Clean up property names"""
         if raw_property_name[:4].upper() in ['SET_', 'GET_']:
             return raw_property_name[4:]
@@ -262,9 +262,9 @@ class Device:
             Categorize properties by Access (e.g. SET-able or Read-Only)
         """
         property_names = {p['property']['name'] for p in properties}
-        settable_properties = {_clean_property_name(p) for p in property_names if p[:3].upper() == 'SET'}
+        settable_properties = {self._clean_property_name(p) for p in property_names if p[:3].upper() == 'SET'}
         readable_properties = {
-            _clean_property_name(p['property']['name']): p['property']
+            self._clean_property_name(p['property']['name']): p['property']
             for p in properties if p['property']['name'].upper() != 'SET'
         }
 

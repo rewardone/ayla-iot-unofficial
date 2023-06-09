@@ -56,8 +56,10 @@ class AylaApi:
         self.europe             = europe
         self.eu_user_field_url  = "https://user-field-eu.aylanetworks.com"
         self.eu_ads_url         = "https://ads-eu.aylanetworks.com"
+        self.eu_rulesservice_url= "https://rulesservice-field-eu.aylanetworks.com"
         self.user_field_url     = "https://user-field.aylanetworks.com"
         self.ads_url            = "https://ads-field.aylanetworks.com"
+        self.rulesservice_url   = "https://rulesservice-field.aylanetworks.com"
 
     async def ensure_session(self) -> ClientSession:
         """Ensure that we have an aiohttp ClientSession"""
@@ -267,3 +269,83 @@ class AylaApi:
                 await device._update_metadata() # update serial number if needed
                 await device.async_update()     # obtain all properties
         return devices
+    
+    def get_actions(self) -> Dict[str, str]:
+        """Get actions synchronously"""
+        resp = self.self_request("get", f"{self.eu_rulesservice_url if self.europe else self.rulesservice_url:s}/rulesservice/v1/actions.json")
+        response = resp.json()["actions"]
+        if resp.status_code == 401:
+            raise AylaAuthError(response)
+        return response
+        
+    async def async_get_actions(self) -> Dict[str, str]:
+        """Get actions asynchronously"""
+        async with await self.async_request("get", f"{self.eu_rulesservice_url if self.europe else self.rulesservice_url:s}/rulesservice/v1/actions.json") as resp:
+            response = await resp.json()["actions"]
+            if resp.status == 401:
+                raise AylaAuthError()
+        return response
+    
+    def get_rules(self) -> Dict[str, str]:
+        """Get rules synchronously"""
+        resp = self.self_request("get", f"{self.eu_rulesservice_url if self.europe else self.rulesservice_url:s}/rulesservice/v1/rules.json")
+        response = resp.json()["rules"]
+        if resp.status_code == 401:
+            raise AylaAuthError(response)
+        return response
+        
+    async def async_get_rules(self) -> Dict[str, str]:
+        """Get rules asynchronously"""
+        async with await self.async_request("get", f"{self.eu_rulesservice_url if self.europe else self.rulesservice_url:s}/rulesservice/v1/rules.json") as resp:
+            response = await resp.json()["rules"]
+            if resp.status == 401:
+                raise AylaAuthError()
+        return response
+    
+    def get_rule_action(self, rule_uuid) -> Dict[str, str]:
+        """Get rules synchronously"""
+        resp = self.self_request("get", f"{self.eu_rulesservice_url if self.europe else self.rulesservice_url:s}/rulesservice/v1/rules/{rule_uuid}/actions.json")
+        response = resp.json()["actions"]
+        if resp.status_code == 401:
+            raise AylaAuthError(response)
+        return response
+        
+    async def async_get_rule_action(self, rule_uuid) -> Dict[str, str]:
+        """Get rules asynchronously"""
+        async with await self.async_request("get", f"{self.eu_rulesservice_url if self.europe else self.rulesservice_url:s}/rulesservice/v1/rules/{rule_uuid}/actions.json") as resp:
+            response = await resp.json()["actions"]
+            if resp.status == 401:
+                raise AylaAuthError()
+        return response
+    
+    def get_commands(self, device_id) -> Dict[str, str]:
+        """Get commands synchronously"""
+        resp = self.self_request("get", f"{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/devices/{device_id}/commands.json")
+        response = resp.json()
+        if resp.status_code == 401:
+            raise AylaAuthError(response)
+        return response
+        
+    async def async_get_commands(self, device_id) -> Dict[str, str]:
+        """Get commands asynchronously"""
+        async with await self.async_request("get", f"{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/devices/{device_id}/commands.json") as resp:
+            response = await resp.json()
+            if resp.status == 401:
+                raise AylaAuthError()
+        return response
+    
+    def get_all_notifications(self, device_id) -> Dict[str, str]:
+        """Get notifications by all on device synchronously"""
+        resp = self.self_request("get", f"{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/devices/{device_id}/notifications/all.json")
+        response = resp.json()["notification"]
+        if resp.status_code == 401:
+            raise AylaAuthError(response)
+        return response
+        
+    async def async_get_all_notifications(self, device_id) -> Dict[str, str]:
+        """Get notifications by all on device asynchronously"""
+        async with await self.async_request("get", f"{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/devices/{device_id}/notifications/all.json") as resp:
+            response = await resp.json()["notification"]
+            if resp.status == 401:
+                raise AylaAuthError()
+        return response
