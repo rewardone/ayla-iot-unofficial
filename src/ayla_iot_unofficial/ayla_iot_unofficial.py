@@ -242,32 +242,32 @@ class AylaApi:
         """Retrieve a device object of devices. Ability to update with metadata. Synchronous."""
         devices = list()
         for d in self.list_devices():
-            if d["product_name"] in ["Vacuum","SharkIQ"]:
-                devices.append(Vacuum(self, d, europe=self.europe))
+            if   d["product_name"] in ["Vacuum","SharkIQ"]:
+                devices.append(Vacuum  (self, d, europe=self.europe))
             elif d["product_name"] in ["Softener"]:
                 devices.append(Softener(self, d, europe=self.europe))
             else:
-                devices.append(Device(self, d, europe=self.europe))
-        if update:
-            for device in devices:
-                device._update_metadata()       # update serial number if needed
-                device.update()                 # obtain all properties
+                devices.append(Device  (self, d, europe=self.europe))
+        # if update:
+        #     for device in devices:
+        #         device._update_metadata()       # update serial number if needed
+        #         device.update()                 # obtain all properties
         return devices
 
     async def async_get_devices(self, update: bool = True) -> List[Device]:
         """Retrieve a device object of devices. Ability to update with metadata. Asynchronous."""
         devices = list()
         for d in await self.async_list_devices():
-            if d["product_name"] in ["Vacuum","SharkIQ"]:
-                devices.append(Vacuum(self, d, europe=self.europe))
+            if   d["product_name"] in ["Vacuum","SharkIQ"]:
+                devices.append(Vacuum  (self, d, europe=self.europe))
             elif d["product_name"] in ["Softener"]:
                 devices.append(Softener(self, d, europe=self.europe))
             else:
-                devices.append(Device(self, d, europe=self.europe))
-        if update:
-            for device in devices:
-                await device._update_metadata() # update serial number if needed
-                await device.async_update()     # obtain all properties
+                devices.append(Device  (self, d, europe=self.europe))
+        # if update:
+        #     for device in devices:
+        #         await device._update_metadata() # update serial number if needed
+        #         await device.async_update()     # obtain all properties
         return devices
     
     def get_actions(self) -> Dict[str, str]:

@@ -120,6 +120,9 @@ class Device:
         self._name                  = device_dct['product_name']
         self._error                 = None
 
+        # Obtain latest state information
+        self.update()
+
     @property
     def oem_model_number(self) -> str:
         return self._oem_model_number
@@ -156,7 +159,6 @@ class Device:
         """
         return f'{self.eu_ads_url if self.europe else self.ads_url}/apiv1/dsns/{self.serial_number}/properties.json'
 
-    @property
     def set_property_endpoint(self, property_name) -> str:
         """Get the API endpoint for a given property"""
         return f'{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/dsns/{self._dsn:s}/properties/{property_name:s}/datapoints.json'
@@ -203,10 +205,14 @@ class Device:
             property_name = property_name.value
         if isinstance(value, Enum):
             value = value.value
+        
         if self.properties_full.get(property_name, {}).get('read_only'):
             raise AylaReadOnlyPropertyError(f'{property_name} is read only')
+        else:
+            """ Get the name of the property. Case sizing for 'SET' varies """
+            property_name = self.properties_full.get(property_name).get("name")
 
-        end_point = self.set_property_endpoint(f'SET_{property_name}')
+        end_point = self.set_property_endpoint(property_name)
         data = {'datapoint': {'value': value}}
         resp = self.ayla_api.self_request('post', end_point, json=data)
         self.properties_full[property_name].update(resp.json())
@@ -258,8 +264,9 @@ class Device:
 
     def _do_update(self, full_update: bool, properties: List[Dict]):
         """
-            Update the internal state from fetched properties
-            Categorize properties by Access (e.g. SET-able or Read-Only)
+            Update the internal state from fetched properties.
+            Categorize properties by Access (e.g. SET-able or Read-Only).
+                Alternatively? This could use the read_only property bool instead of 'set_'.
         """
         property_names = {p['property']['name'] for p in properties}
         settable_properties = {self._clean_property_name(p) for p in property_names if p[:3].upper() == 'SET'}
@@ -340,6 +347,9 @@ class Device:
 
 class Vacuum(Device):
     """ Extend device into a vacuum specific device """
+    def __init__(self, ayla_api: "AylaApi", device_dct: Dict, europe: bool = False):
+        super().__init__(ayla_api, device_dct, europe)
+        self._update_metadata()   # update metadata needed for sharkIQ 
 
     def _encode_room_list(self, rooms: List[str]):
         """Base64 encode the list of rooms to clean"""
@@ -444,6 +454,169 @@ class Vacuum(Device):
 class Softener(Device):
     """ Extend device into a water softener specific device """
 
+    def __init__(self, ayla_api: "AylaApi", device_dct: Dict, europe: bool = False):
+        super().__init__(ayla_api, device_dct, europe)
+
+        # init should call update() and properties should be available
+        self.avg_daily_usage            = self.get_property_value("avg_daily_usage")
+        self.current_flow_rate          = self.get_property_value("current_flow_rate")
+        self.capacity_remaining_gallons = self.get_property_value("capacity_remaining_gallons")
+        self.hardness_in_grains_per_gal = self.get_property_value("hardness_in_grains_per_gal")
+        self.days_since_last_regen      = self.get_property_value("days_since_last_regen")
+        self.last_regen_date_time       = self.get_property_value("last_regen_date_time")
+        self.away_mode_water_use        = self.get_property_value("away_mode_water_use")
+        self.valve_position             = self.get_property_value("valve_position")
+        self.total_gallons_today        = self.get_property_value("total_gallons_today")
+        self.error_flags                = self.get_property_value("error_flags")
+        self.total_gallons_since_install= self.get_property_value("total_gallons_since_install")
+        self.total_regens_since_install = self.get_property_value("total_regens_since_install")
+        self.avg_daily_properties       = ["avg_sun","avg_mon","avg_tue","avg_wed","avg_thr","avg_fri","avg_sat"]
+        self.daily_usage_properties     = ["daily_usage_day_1", "daily_usage_day_2", "daily_usage_day_3", "daily_usage_day_4", "daily_usage_day_5", "daily_usage_day_6", "daily_usage_day_7"]
+        self.hourly_usage_properties    = ["hourly_usage_hour_1", "hourly_usage_hour_2", "hourly_usage_hour_3", "hourly_usage_hour_4", "hourly_usage_hour_5", "hourly_usage_hour_6", "hourly_usage_hour_7", "hourly_usage_hour_8", "hourly_usage_hour_9", "hourly_usage_hour_10", "hourly_usage_hour_11", "hourly_usage_hour_12", "hourly_usage_hour_13", "hourly_usage_hour_14", "hourly_usage_hour_15", "hourly_usage_hour_16", "hourly_usage_hour_17", "hourly_usage_hour_18", "hourly_usage_hour_19", "hourly_usage_hour_20", "hourly_usage_hour_21", "hourly_usage_hour_22", "hourly_usage_hour_23", "hourly_usage_hour_24"]
+
+    def set_avg_daily_properties_list(self, newList):
+        """The default avg_daily_properties are from Culligan data. Allow them to be changed."""
+        self.avg_daily_properties       = newList
+
+    def set_daily_usage_properties_list(self, newList):
+        """The default daily_usage_properties are from Culligan data. Allow them to be changed."""
+        self.daily_usage_properties     = newList
+
+    def set_hourly_usage_properties_list(self, newList):
+        """The default hourly_usage_properties are from Culligan data. Allow them to be changed."""
+        self.hourly_usage_properties    = newList
+
+    def get_average_daily_usage(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.avg_daily_usage
+
+    async def async_get_average_daily_usage(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.avg_daily_usage
+    
+    def get_current_flow_rate(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.current_flow_rate
+
+    async def async_get_current_flow_rate(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.current_flow_rate
+
+    def get_capacity_remaining_gallons(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.capacity_remaining_gallons
+
+    async def async_get_capacity_remaining_gallons(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.capacity_remaining_gallons
+    
+    def get_hardness_in_grains_per_gal(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.hardness_in_grains_per_gal
+
+    async def async_get_hardness_in_grains_per_gal(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.hardness_in_grains_per_gal
+    
+    def get_days_since_last_regen(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.days_since_last_regen
+
+    async def async_get_days_since_last_regen(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.days_since_last_regen
+    
+    def get_last_regen_date_time(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.last_regen_date_time
+
+    async def async_get_last_regen_date_time(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.last_regen_date_time
+    
+    def get_away_mode_water_use(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.away_mode_water_use
+
+    async def async_get_away_mode_water_use(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.away_mode_water_use
+
+    def get_valve_position(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.valve_position
+
+    async def async_get_valve_position(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.valve_position
+
+    def get_total_gallons_today(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.total_gallons_today
+
+    async def async_get_total_gallons_today(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.total_gallons_today
+    
+    def get_error_flags(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.error_flags
+
+    async def async_get_error_flags(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.error_flags
+    
+    def get_total_gallons_since_install(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.total_gallons_since_install
+
+    async def async_get_total_gallons_since_install(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.total_gallons_since_install
+    
+    def get_total_regens_since_install(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.total_regens_since_install
+
+    async def async_get_total_regens_since_install(self):
+        """Convenience wrapper around `get_property_value`"""
+        return self.total_regens_since_install
+
+    def start_vacation_mode(self):
+        """
+            Needs testing. Set vacation mode value from 0 (default) to 255 (max).
+            Properties and values may vary per manufacturer.
+        """
+        PropertyName    = "set_vacation_mode"
+        PropertyValue   = 255
+        self.set_property_value(PropertyName, PropertyValue)
+
+    async def start_vacation_mode(self):
+        """
+            Needs testing. Set vacation mode value from 0 (default) to 255 (max).
+            Properties and values may vary per manufacturer.
+        """
+        PropertyName    = "set_vacation_mode"
+        PropertyValue   = 255
+        await self.async_set_property_value(PropertyName, PropertyValue)
+
+    def stop_vacation_mode(self):
+        """
+            Needs testing. Set vacation mode value from 255 (max) to 0 (default).
+            Properties and values may vary per manufacturer.
+        """
+        PropertyName    = "set_vacation_mode"
+        PropertyValue   = 0
+        self.set_property_value(PropertyName, PropertyValue)
+
+    async def stop_vacation_mode(self):
+        """
+            Needs testing. Set vacation mode value from 255 (max) to 0 (default).
+            Properties and values may vary per manufacturer.
+        """
+        PropertyName    = "set_vacation_mode"
+        PropertyValue   = 0
+        await self.async_set_property_value(PropertyName, PropertyValue)
 
 class DevicePropertiesView(abc.Mapping):
     """Convenience API for device properties"""
