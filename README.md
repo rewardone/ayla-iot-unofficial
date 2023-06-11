@@ -7,8 +7,15 @@ Designed primarily to be a support package for [Home Assistant](https://www.home
 This library is heavily based off of [sharkiq](https://github.com/JeffResc/sharkiq) by [@JeffResc](https://github.com/JeffResc).
 
 ## Installation
-
+From PyPi
 ```bash
+pip install ayla-iot-unofficial
+```
+
+Build from source
+```bash
+pip install build
+pip build
 pip install ayla-iot-unofficial
 ```
 
