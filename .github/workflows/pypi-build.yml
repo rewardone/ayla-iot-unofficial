@@ -5,7 +5,7 @@ name: Build into a Python Package Using SetupTools
 on: push
 
 jobs:
-  setup_build_env:
+  setup_and_build:
     name: Build packages
     runs-on: ubuntu-latest
     steps:
@@ -19,10 +19,10 @@ jobs:
         python3 -m pip install --upgrade pip
     - name: Install python build
       run: |
-        pip install build --outdir dist/
+        pip install build --user
     - name: Build sdist and wheel
       run: |
-        python3 -m build
+        python3 -m build --outdir dist/
     - name: Upload dist for publishing
       uses: actions/upload-artifact@v3
       with:

@@ -5,7 +5,13 @@ name: Publish to TestPyPi
 on: push
 
 jobs:
-  setup_build_env:
+  compliance:
+    name: Job with no dependencies to satisfy GitHub Actions
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+  publish:
     name: Publish to TestPyPi
     needs: Build packages
     runs-on: ubuntu-latest
