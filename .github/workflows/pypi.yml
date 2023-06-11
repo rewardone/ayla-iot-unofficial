@@ -48,6 +48,8 @@ jobs:
     steps:
     - name: Get dist from build job
       uses: actions/download-artifact@v3
+      with:
+        path: dist/
     - name: Publish to TestPyPi
       uses: pypa/gh-action-pypi-publish@v1.8.6
       with:
