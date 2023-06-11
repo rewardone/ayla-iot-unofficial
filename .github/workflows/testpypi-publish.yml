@@ -12,7 +12,7 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/p/ayla_iot_unofficial
     permissions:
-      id_token: write
+      id-token: write
     steps:
     - uses: actions/checkout@v3
     - name: Publish to TestPyPi

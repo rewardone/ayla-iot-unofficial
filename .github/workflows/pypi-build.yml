@@ -14,10 +14,12 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.x"
-    - name: Install pypa
-      run: >-
+    - name: Install and ensure pip
+      run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install build --user
+    - name: Install python build
+      run: |
+        pip install build --user
     - name: Build sdist and wheel
-      run: >-
+      run: |
         python3 -m build
