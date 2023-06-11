@@ -19,7 +19,7 @@ jobs:
         python3 -m pip install --upgrade pip
     - name: Install python build
       run: |
-        pip install build --user --outdir dist/
+        pip install build --outdir dist/
     - name: Build sdist and wheel
       run: |
         python3 -m build
