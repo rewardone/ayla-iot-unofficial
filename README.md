@@ -39,7 +39,11 @@ See device.py for implemented device classes.
 
 ## Typical Operation
 ```python
-import ayla-iot-unofficial
+python3 -m pip install ayla-iot-unofficial
+```
+
+```python
+import ayla_iot_unofficial
 
 USERNAME = 'me@email.com'
 PASSWORD = '$7r0nkP@s$w0rD'
