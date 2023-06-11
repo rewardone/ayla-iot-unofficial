@@ -32,8 +32,8 @@ jobs:
     - name: Upload dist for publishing
       uses: actions/upload-artifact@v3
       with:
-        name: dist-artifacts
-        path: dist
+        path: |
+          dist
         retention-days: 1
   
   publish_TestPyPi:
