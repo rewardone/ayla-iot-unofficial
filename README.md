@@ -7,6 +7,14 @@ Designed primarily to be a support package for [Home Assistant](https://www.home
 This library is heavily based off of [sharkiq](https://github.com/JeffResc/sharkiq) by [@JeffResc](https://github.com/JeffResc).
 
 [PyPi](https://pypi.org/project/ayla-iot-unofficial/)
+
+# Ayla References
+This device is integrated by/with Ayla Networks and (generally) uses their documentation. 
+
+These can be used as starting references:
+* https://developer.aylanetworks.com/apibrowser
+* https://docs.aylanetworks.com/reference/getting_started
+* https://connection.aylanetworks.com/s/article/2080270
  
 ## Installation
 From PyPi

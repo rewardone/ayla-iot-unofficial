@@ -12,6 +12,15 @@ from requests   import post, request, Response   # http request library
 from datetime   import datetime, timedelta       # datetime operations
 from typing     import Dict, List, Optional      # object types
 
+from .const import (
+    EU_USER_FIELD_BASE,
+    EU_ADS_BASE,
+    EU_RULESSERVICE_BASE,
+    USER_FIELD_BASE,
+    ADS_BASE,
+    RULESSERVICE_BASE
+)
+
 # Custom error handling 
 from .exc import (
     AylaError,
@@ -54,12 +63,12 @@ class AylaApi:
         self._app_secret        = app_secret
         self.websession         = websession
         self.europe             = europe
-        self.eu_user_field_url  = "https://user-field-eu.aylanetworks.com"
-        self.eu_ads_url         = "https://ads-eu.aylanetworks.com"
-        self.eu_rulesservice_url= "https://rulesservice-field-eu.aylanetworks.com"
-        self.user_field_url     = "https://user-field.aylanetworks.com"
-        self.ads_url            = "https://ads-field.aylanetworks.com"
-        self.rulesservice_url   = "https://rulesservice-field.aylanetworks.com"
+        self.eu_user_field_url  = EU_USER_FIELD_BASE
+        self.eu_ads_url         = EU_ADS_BASE
+        self.eu_rulesservice_url= EU_RULESSERVICE_BASE
+        self.user_field_url     = USER_FIELD_BASE
+        self.ads_url            = ADS_BASE
+        self.rulesservice_url   = RULESSERVICE_BASE
 
     async def ensure_session(self) -> ClientSession:
         """Ensure that we have an aiohttp ClientSession"""

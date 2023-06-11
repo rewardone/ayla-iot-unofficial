@@ -591,7 +591,7 @@ class Softener(Device):
         PropertyValue   = 255
         self.set_property_value(PropertyName, PropertyValue)
 
-    async def start_vacation_mode(self):
+    async def async_start_vacation_mode(self):
         """
             Needs testing. Set vacation mode value from 0 (default) to 255 (max).
             Properties and values may vary per manufacturer.
@@ -609,7 +609,7 @@ class Softener(Device):
         PropertyValue   = 0
         self.set_property_value(PropertyName, PropertyValue)
 
-    async def stop_vacation_mode(self):
+    async def async_stop_vacation_mode(self):
         """
             Needs testing. Set vacation mode value from 255 (max) to 0 (default).
             Properties and values may vary per manufacturer.
