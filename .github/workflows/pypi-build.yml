@@ -6,7 +6,7 @@ on: push
 
 jobs:
   setup_build_env:
-    name: Setup build environment
+    name: Build packages
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -19,7 +19,12 @@ jobs:
         python3 -m pip install --upgrade pip
     - name: Install python build
       run: |
-        pip install build --user
+        pip install build --user --outdir dist/
     - name: Build sdist and wheel
       run: |
         python3 -m build
+    - name: Upload dist for publishing
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/

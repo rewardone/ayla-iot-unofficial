@@ -7,6 +7,7 @@ on: push
 jobs:
   setup_build_env:
     name: Publish to TestPyPi
+    needs: Build packages
     runs-on: ubuntu-latest
     environment:
       name: testpypi
@@ -14,7 +15,10 @@ jobs:
     permissions:
       id-token: write
     steps:
-    - uses: actions/checkout@v3
+    - name: Get dist from build job
+      uses: actions/download-artifact@v3
+      with:
+        name: dist
     - name: Publish to TestPyPi
       uses: pypa/gh-action-pypi-publish@v1.8.6
       with:
