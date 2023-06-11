@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup_and_build
     environment:
-      name: testpypi
+      name: pypi
       url: https://pypi.org/p/ayla-iot-unofficial
     permissions:
       id-token: write
