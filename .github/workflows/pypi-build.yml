@@ -1,0 +1,23 @@
+# Workflow to publish package to the TestPyPi repostory when a release is published
+
+name: Build into a Python Package Using SetupTools
+
+on: push
+
+jobs:
+  setup_build_env:
+    name: Setup build environment
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.x"
+    - name: Install pypa
+      run: >-
+        python3 -m pip install --upgrade pip
+        python3 -m pip install build --user
+    - name: Build sdist and wheel
+      run: >-
+        python3 -m build

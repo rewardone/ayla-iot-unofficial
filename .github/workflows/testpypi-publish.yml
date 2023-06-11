@@ -1,0 +1,22 @@
+# Workflow to publish package to the TestPyPi repostory when a release is published
+
+name: Publish to TestPyPi
+
+on: push
+
+jobs:
+  setup_build_env:
+    name: Publish to TestPyPi
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/ayla_iot_unofficial
+    permissions:
+      id_token: write
+    steps:
+    - uses: actions/checkout@v3
+    - name: Publish to TestPyPi
+      uses: pypa/gh-action-pypi-publish@v1.8.6
+      with:
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository-url: https://test.pypi.org/legacy/
