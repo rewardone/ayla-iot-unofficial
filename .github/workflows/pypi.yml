@@ -67,8 +67,7 @@ jobs:
     steps:
     - name: Get dist from build job
       uses: actions/download-artifact@v3
-    - name: Publish to TestPyPi
-      if:   startsWith(github.ref, 'refs/tags')
+    - name: Publish to PyPi
       uses: pypa/gh-action-pypi-publish@v1.8.6
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
