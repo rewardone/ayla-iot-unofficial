@@ -120,9 +120,6 @@ class Device:
         self._name                  = device_dct['product_name']
         self._error                 = None
 
-        # Obtain latest state information
-        self.update()
-
     @property
     def oem_model_number(self) -> str:
         return self._oem_model_number
