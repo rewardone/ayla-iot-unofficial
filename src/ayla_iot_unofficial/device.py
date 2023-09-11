@@ -244,7 +244,8 @@ class Device:
 
         resp = self.ayla_api.self_request('get', self.dsn_all_properties_endpoint, params=params)
         properties = resp.json()
-        self._do_update(full_update, properties)
+        
+        return self._do_update(full_update, properties)
 
     async def async_update(self, property_list: Optional[Iterable[str]] = None):
         """Async update the known device state from all properties and call _do_update to add the properties to the object property dictionary"""
@@ -257,7 +258,8 @@ class Device:
         async with await self.ayla_api.async_request('get', self.dsn_all_properties_endpoint, params=params) as resp:
             properties = await resp.json()
 
-        self._do_update(full_update, properties)
+        # _do_update should not be thread blocking
+        return self._do_update(full_update, properties)
 
     def _do_update(self, full_update: bool, properties: List[Dict]):
         """
@@ -282,6 +284,8 @@ class Device:
             # Did a full update, so let's wipe everything
             self.properties_full = defaultdict(dict)
         self.properties_full.update(readable_properties)
+
+        return True
 
     @staticmethod
     def _get_most_recent_datum(data_list: List[Dict], date_field: str = 'updated_at') -> Dict:
