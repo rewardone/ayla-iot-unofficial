@@ -263,7 +263,7 @@ class Device:
 
     def _do_update(self, full_update: bool, properties: List[Dict]):
         """
-            Update the internal state from fetched properties.
+            Update the internal state from fetched properties. This is called within update()/async_update()
             Categorize properties by Access (e.g. SET-able or Read-Only).
                 Alternatively? This could use the read_only property bool instead of 'set_'.
         """
@@ -474,6 +474,45 @@ class Softener(Device):
         self.avg_daily_properties       = ["avg_sun","avg_mon","avg_tue","avg_wed","avg_thr","avg_fri","avg_sat"]
         self.daily_usage_properties     = ["daily_usage_day_1", "daily_usage_day_2", "daily_usage_day_3", "daily_usage_day_4", "daily_usage_day_5", "daily_usage_day_6", "daily_usage_day_7"]
         self.hourly_usage_properties    = ["hourly_usage_hour_1", "hourly_usage_hour_2", "hourly_usage_hour_3", "hourly_usage_hour_4", "hourly_usage_hour_5", "hourly_usage_hour_6", "hourly_usage_hour_7", "hourly_usage_hour_8", "hourly_usage_hour_9", "hourly_usage_hour_10", "hourly_usage_hour_11", "hourly_usage_hour_12", "hourly_usage_hour_13", "hourly_usage_hour_14", "hourly_usage_hour_15", "hourly_usage_hour_16", "hourly_usage_hour_17", "hourly_usage_hour_18", "hourly_usage_hour_19", "hourly_usage_hour_20", "hourly_usage_hour_21", "hourly_usage_hour_22", "hourly_usage_hour_23", "hourly_usage_hour_24"]
+
+    @property
+    def _wifi_polling_data(self) -> Dict:
+        """Payload for wifi_report check-in"""
+        return {
+            "batch_datapoints": [
+                {
+                    "datapoint": {
+                        "value": 1
+                    },
+                    "dsn": self._device_serial_number,
+                    "name": "wifi_report"
+                }
+            ]
+        }
+    
+    def send_poll(self):
+        """Send a wifi_report to trigger updated properties, this requires an ayla api token"""
+
+        datapoints = f'{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/batch_datapoints.json'
+
+        resp = self.ayla_api.self_request('post', datapoints, json=self._wifi_polling_data)
+        if(resp.json()):
+            return True
+        else:
+            return False
+
+    async def async_send_poll(self):
+        """Send a wifi_report to trigger updated properties, this requires an ayla api token"""
+
+        datapoints = f'{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/batch_datapoints.json'
+
+        async with await self.ayla_api.async_request('post', datapoints, json=self._wifi_polling_data) as resp:
+            json = await resp.json()
+
+        if(json):
+            return True
+        else:
+            return False
 
     def set_avg_daily_properties_list(self, newList):
         """The default avg_daily_properties are from Culligan data. Allow them to be changed."""
