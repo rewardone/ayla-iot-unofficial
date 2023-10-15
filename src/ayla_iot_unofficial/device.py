@@ -543,6 +543,12 @@ class Softener(Device):
         if isinstance(value, Enum):
             value = value.value
 
+        if self.properties_full.get(property_name, {}).get('read_only'):
+            raise AylaReadOnlyPropertyError(f'{property_name} is read only')
+        else:
+            """ Get the name of the property. Case sizing for 'SET' varies """
+            property_name = self.properties_full.get(property_name).get("name")
+
         async with await self.ayla_api.async_request('post', self.datapoints_endpoint, json=self.set_datapoint_payload(property_name, value)) as resp:
             resp_data = await resp.json()
         await self.async_update()
