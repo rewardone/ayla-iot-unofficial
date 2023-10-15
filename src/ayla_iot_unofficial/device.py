@@ -545,7 +545,7 @@ class Softener(Device):
 
         async with await self.ayla_api.async_request('post', self.datapoints_endpoint, json=self.set_datapoint_payload(property_name, value)) as resp:
             resp_data = await resp.json()
-        self.async_update()
+        await self.async_update()
 
     def send_poll(self):
         """Send a wifi_report to trigger updated properties, this requires an ayla api token"""
