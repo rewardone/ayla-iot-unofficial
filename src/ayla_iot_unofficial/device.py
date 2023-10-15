@@ -109,6 +109,7 @@ class Device:
         self._device_ip_address     = device_dct['lan_ip']
         self.properties_full        = defaultdict(dict)         # Using a defaultdict prevents errors before calling `update()`
         self.property_values        = DevicePropertiesView(self)
+        self.triggers               = defaultdict(dict)
         self._settable_properties   = None                      # type: Optional[Set]
         self.europe                 = europe                    # type: bool
         self.eu_user_field_url      = "https://user-field-eu.aylanetworks.com"
@@ -155,6 +156,12 @@ class Device:
             This API retrieves all the properties for a specified device serial number (DSN).
         """
         return f'{self.eu_ads_url if self.europe else self.ads_url}/apiv1/dsns/{self.serial_number}/properties.json'
+    
+    def property_triggers_endpoint(self, property_name) -> str:
+        """
+            Certain properties have triggers (e.g. notifications, etc.) tied to them. Get the endpoint that contains the trigger data.
+        """
+        return f'{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/dsns/{self._dsn:s}/properties/{property_name:s}/triggers.json'
 
     def set_property_endpoint(self, property_name) -> str:
         """Get the API endpoint for a given property"""
@@ -346,6 +353,24 @@ class Device:
         async with session.get(url) as resp:
             return await resp.read()
 
+    def get_property_triggers(self, property_name: PropertyName):
+        """For a properties triggers, get them and add them to the device"""
+        resp = self.ayla_api.self_request('get', self.property_triggers_endpoint(property_name))
+        triggers = resp.json()
+        #[{trigger:{key}}]
+        for trigger in triggers:
+            if trigger["trigger"]["key"] not in self.triggers.keys():
+                self.triggers[trigger["trigger"]["key"]] = trigger["trigger"]
+
+    async def async_get_property_triggers(self, property_name: PropertyName):
+        """For a properties triggers, get them and add them to the device"""
+        resp = await self.ayla_api.async_request('get', self.property_triggers_endpoint(property_name))
+        triggers = await resp.json()
+        #[{trigger:{key}}]
+        for trigger in triggers:
+            if trigger["trigger"]["key"] not in self.triggers.keys():
+                self.triggers[trigger["trigger"]["key"]] = trigger["trigger"]
+
 class Vacuum(Device):
     """ Extend device into a vacuum specific device """
     def __init__(self, ayla_api: "AylaApi", device_dct: Dict, europe: bool = False):
@@ -476,26 +501,56 @@ class Softener(Device):
         self.hourly_usage_properties    = ["hourly_usage_hour_1", "hourly_usage_hour_2", "hourly_usage_hour_3", "hourly_usage_hour_4", "hourly_usage_hour_5", "hourly_usage_hour_6", "hourly_usage_hour_7", "hourly_usage_hour_8", "hourly_usage_hour_9", "hourly_usage_hour_10", "hourly_usage_hour_11", "hourly_usage_hour_12", "hourly_usage_hour_13", "hourly_usage_hour_14", "hourly_usage_hour_15", "hourly_usage_hour_16", "hourly_usage_hour_17", "hourly_usage_hour_18", "hourly_usage_hour_19", "hourly_usage_hour_20", "hourly_usage_hour_21", "hourly_usage_hour_22", "hourly_usage_hour_23", "hourly_usage_hour_24"]
 
     @property
-    def _wifi_polling_data(self) -> Dict:
-        """Payload for wifi_report check-in"""
+    def datapoints_endpoint(self) -> str:
+        "Provide the datapoints endpoint, used for polling, property updates, and more"
+        return f'{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/batch_datapoints.json'
+
+    def set_datapoint_payload(self, property, value) -> Dict:
+        """Create a batch_datapoint update payload"""
         return {
             "batch_datapoints": [
                 {
                     "datapoint": {
-                        "value": 1
+                        "value": value
                     },
                     "dsn": self._device_serial_number,
-                    "name": "wifi_report"
+                    "name": property
                 }
             ]
         }
-    
+
+    def set_property_value(self, property_name: PropertyName, value: PropertyValue):
+        """Update a property, overload from device"""
+        if isinstance(property_name, Enum):
+            property_name = property_name.value
+        if isinstance(value, Enum):
+            value = value.value
+        
+        if self.properties_full.get(property_name, {}).get('read_only'):
+            raise AylaReadOnlyPropertyError(f'{property_name} is read only')
+        else:
+            """ Get the name of the property. Case sizing for 'SET' varies """
+            property_name = self.properties_full.get(property_name).get("name")
+
+        resp = self.ayla_api.self_request('post', self.datapoints_endpoint, json=self.set_datapoint_payload(property_name, value))
+        # datapoint is created, but the value is not returned ... 
+        self.update()
+
+    async def async_set_property_value(self, property_name: PropertyName, value: PropertyValue):
+        """Update a property async, overload from device"""
+        if isinstance(property_name, Enum):
+            property_name = property_name.value
+        if isinstance(value, Enum):
+            value = value.value
+
+        async with await self.ayla_api.async_request('post', self.datapoints_endpoint, json=self.set_datapoint_payload(property_name, value)) as resp:
+            resp_data = await resp.json()
+        self.async_update()
+
     def send_poll(self):
         """Send a wifi_report to trigger updated properties, this requires an ayla api token"""
 
-        datapoints = f'{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/batch_datapoints.json'
-
-        resp = self.ayla_api.self_request('post', datapoints, json=self._wifi_polling_data)
+        resp = self.ayla_api.self_request('post', self.datapoints_endpoint, json=self.set_datapoint_payload("wifi_report", 1))
         if(resp.json()):
             return True
         else:
@@ -506,7 +561,7 @@ class Softener(Device):
 
         datapoints = f'{self.eu_ads_url if self.europe else self.ads_url:s}/apiv1/batch_datapoints.json'
 
-        async with await self.ayla_api.async_request('post', datapoints, json=self._wifi_polling_data) as resp:
+        async with await self.ayla_api.async_request('post', datapoints, json=self.set_datapoint_payload("wifi_report", 1)) as resp:
             json = await resp.json()
 
         if(json):
@@ -627,8 +682,8 @@ class Softener(Device):
             Needs testing. Set vacation mode value from 0 (default) to 255 (max).
             Properties and values may vary per manufacturer.
         """
-        PropertyName    = "set_vacation_mode"
-        PropertyValue   = 255
+        PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
+        PropertyValue   = 1
         self.set_property_value(PropertyName, PropertyValue)
 
     async def async_start_vacation_mode(self):
@@ -636,8 +691,8 @@ class Softener(Device):
             Needs testing. Set vacation mode value from 0 (default) to 255 (max).
             Properties and values may vary per manufacturer.
         """
-        PropertyName    = "set_vacation_mode"
-        PropertyValue   = 255
+        PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
+        PropertyValue   = 1
         await self.async_set_property_value(PropertyName, PropertyValue)
 
     def stop_vacation_mode(self):
@@ -645,7 +700,7 @@ class Softener(Device):
             Needs testing. Set vacation mode value from 255 (max) to 0 (default).
             Properties and values may vary per manufacturer.
         """
-        PropertyName    = "set_vacation_mode"
+        PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
         PropertyValue   = 0
         self.set_property_value(PropertyName, PropertyValue)
 
@@ -654,7 +709,7 @@ class Softener(Device):
             Needs testing. Set vacation mode value from 255 (max) to 0 (default).
             Properties and values may vary per manufacturer.
         """
-        PropertyName    = "set_vacation_mode"
+        PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
         PropertyValue   = 0
         await self.async_set_property_value(PropertyName, PropertyValue)
 
