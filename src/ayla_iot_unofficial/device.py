@@ -691,6 +691,7 @@ class Softener(Device):
         PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
         PropertyValue   = 1
         self.set_property_value(PropertyName, PropertyValue)
+        return True
 
     async def async_start_vacation_mode(self):
         """
@@ -700,6 +701,7 @@ class Softener(Device):
         PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
         PropertyValue   = 1
         await self.async_set_property_value(PropertyName, PropertyValue)
+        return True
 
     def stop_vacation_mode(self):
         """
@@ -709,6 +711,7 @@ class Softener(Device):
         PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
         PropertyValue   = 0
         self.set_property_value(PropertyName, PropertyValue)
+        return True
 
     async def async_stop_vacation_mode(self):
         """
@@ -718,6 +721,7 @@ class Softener(Device):
         PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
         PropertyValue   = 0
         await self.async_set_property_value(PropertyName, PropertyValue)
+        return True
 
 class DevicePropertiesView(abc.Mapping):
     """Convenience API for device properties"""
