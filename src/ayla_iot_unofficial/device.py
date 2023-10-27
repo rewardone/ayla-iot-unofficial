@@ -1,14 +1,15 @@
 """Basic non-device-specific data object"""
 
+from .exc        import AylaReadOnlyPropertyError
 from base64      import b64encode
-from enum        import Enum, IntEnum, unique
-from logging     import getLogger
-from requests    import get
 from collections import abc, defaultdict
 from datetime    import datetime
+from enum        import Enum, IntEnum, unique
+from logging     import getLogger
 from pprint      import pformat
+from re          import findall
+from requests    import get
 from typing      import Any, Dict, Iterable, List, Optional, Set, Union, TYPE_CHECKING
-from .exc        import AylaReadOnlyPropertyError
 
 try:
     from ujson   import loads
@@ -201,6 +202,7 @@ class Device:
         """Get the value of a property from the properties dictionary"""
         if isinstance(property_name, Enum):
             property_name = property_name.value
+
         return self.property_values[property_name]
 
     def set_property_value(self, property_name: PropertyName, value: PropertyValue):
@@ -483,19 +485,43 @@ class Softener(Device):
     def __init__(self, ayla_api: "AylaApi", device_dct: Dict, europe: bool = False):
         super().__init__(ayla_api, device_dct, europe)
 
-        # init should call update() and properties should be available
-        self.avg_daily_usage            = self.get_property_value("avg_daily_usage")
-        self.current_flow_rate          = self.get_property_value("current_flow_rate")
-        self.capacity_remaining_gallons = self.get_property_value("capacity_remaining_gallons")
-        self.hardness_in_grains_per_gal = self.get_property_value("hardness_in_grains_per_gal")
-        self.days_since_last_regen      = self.get_property_value("days_since_last_regen")
-        self.last_regen_date_time       = self.get_property_value("last_regen_date_time")
-        self.away_mode_water_use        = self.get_property_value("away_mode_water_use")
-        self.valve_position             = self.get_property_value("valve_position")
-        self.total_gallons_today        = self.get_property_value("total_gallons_today")
-        self.error_flags                = self.get_property_value("error_flags")
-        self.total_gallons_since_install= self.get_property_value("total_gallons_since_install")
-        self.total_regens_since_install = self.get_property_value("total_regens_since_install")
+        self.alternate_mapping          = {
+            "aqua_sensor_Zmin"          : "aqua_sensor_Zmin_1",
+            "aqua_sensor_Zratio_current": "aqua_sensor_Zratio_curr_1",
+            "BD_rinse"                  : "bd_rinse",
+            "capacity_remaining_gallons": "capacity_remaining_volume_1",
+            "days_since_last_regen"     : "days_since_last_regen_1",
+            "error_flags"               : "system_error_flags",
+            "flow_profiles_max_flow"    : "flow_profiles_max_flow_lim",
+            "flow_profiles_min_flow"    : "flow_profiles_min_flow_lim",
+            "gbe_fw_version"            : "gbx_fw_version",
+            "hardness_in_grains_per_gal": "hardness_value",
+            "iron_setting"              : "iron",
+            "last_regen_date_time"      : "last_regen_date_time_1",
+            "next_regen_on_date"        : "next_regen_date_time",
+            "regen_interval_days_setting":"regen_interval_days",
+            "salt_dosage_in_lbs"        : "salt_dosage",
+            "sbt_salt_level_low"        : "low_salt_level",
+            "set_vacation_mode"         : "set_away_mode",
+            "total_gallons_since_install":"water_usage_since_install_1",
+            "total_gallons_today"       : "total_water_usage_today_1",
+            "unit_status"               : "unit_status_1",
+            "valve_position"            : "valve_position_1"
+        }
+
+        # # init should call update() and properties should be available
+        # self.avg_daily_usage            = self.get_property_value("avg_daily_usage")
+        # self.current_flow_rate          = self.get_property_value("current_flow_rate")
+        # self.capacity_remaining_gallons = self.get_property_value("capacity_remaining_gallons")
+        # self.hardness_in_grains_per_gal = self.get_property_value("hardness_in_grains_per_gal")
+        # self.days_since_last_regen      = self.get_property_value("days_since_last_regen")
+        # self.last_regen_date_time       = self.get_property_value("last_regen_date_time")
+        # self.away_mode_water_use        = self.get_property_value("away_mode_water_use")
+        # self.valve_position             = self.get_property_value("valve_position")
+        # self.total_gallons_today        = self.get_property_value("total_gallons_today")
+        # self.error_flags                = self.get_property_value("error_flags")
+        # self.total_gallons_since_install= self.get_property_value("total_gallons_since_install")
+        # self.total_regens_since_install = self.get_property_value("total_regens_since_install")
         self.avg_daily_properties       = ["avg_sun","avg_mon","avg_tue","avg_wed","avg_thr","avg_fri","avg_sat"]
         self.daily_usage_properties     = ["daily_usage_day_1", "daily_usage_day_2", "daily_usage_day_3", "daily_usage_day_4", "daily_usage_day_5", "daily_usage_day_6", "daily_usage_day_7"]
         self.hourly_usage_properties    = ["hourly_usage_hour_1", "hourly_usage_hour_2", "hourly_usage_hour_3", "hourly_usage_hour_4", "hourly_usage_hour_5", "hourly_usage_hour_6", "hourly_usage_hour_7", "hourly_usage_hour_8", "hourly_usage_hour_9", "hourly_usage_hour_10", "hourly_usage_hour_11", "hourly_usage_hour_12", "hourly_usage_hour_13", "hourly_usage_hour_14", "hourly_usage_hour_15", "hourly_usage_hour_16", "hourly_usage_hour_17", "hourly_usage_hour_18", "hourly_usage_hour_19", "hourly_usage_hour_20", "hourly_usage_hour_21", "hourly_usage_hour_22", "hourly_usage_hour_23", "hourly_usage_hour_24"]
@@ -518,6 +544,19 @@ class Softener(Device):
                 }
             ]
         }
+
+    def get_property_value(self, property_name: PropertyName) -> Any:
+        """Get the value of a property from the properties dictionary"""
+        if isinstance(property_name, Enum):
+            property_name = property_name.value
+
+        if property_name in self.properties_full.keys():
+            return self.property_values[property_name]
+        elif self.alternate_mapping:
+            if self.alternate_mapping[property_name] in self.properties_full.keys():
+                return self.property_values[self.alternate_mapping[property_name]]
+        else:
+            return False
 
     def set_property_value(self, property_name: PropertyName, value: PropertyValue):
         """Update a property, overload from device"""
@@ -688,7 +727,10 @@ class Softener(Device):
             Needs testing. Set vacation mode value from 0 (default) to 255 (max).
             Properties and values may vary per manufacturer.
         """
-        PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
+        if "vacation_mode" in self.properties_full.keys():
+            PropertyName    = "vacation_mode"   # because _clean property, 'set' is removed ... "set_vacation_mode"
+        elif "away_mode" in self.properties_full.keys():
+            PropertyName    = "away_mode"       # because _clean property, 'set' is removed ... "set_away_mode"
         PropertyValue   = 1
         self.set_property_value(PropertyName, PropertyValue)
         return True
@@ -698,7 +740,10 @@ class Softener(Device):
             Needs testing. Set vacation mode value from 0 (default) to 255 (max).
             Properties and values may vary per manufacturer.
         """
-        PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
+        if "vacation_mode" in self.properties_full.keys():
+            PropertyName    = "vacation_mode"   # because _clean property, 'set' is removed ... "set_vacation_mode"
+        elif "away_mode" in self.properties_full.keys():
+            PropertyName    = "away_mode"       # because _clean property, 'set' is removed ... "set_away_mode"
         PropertyValue   = 1
         await self.async_set_property_value(PropertyName, PropertyValue)
         return True
@@ -708,7 +753,10 @@ class Softener(Device):
             Needs testing. Set vacation mode value from 255 (max) to 0 (default).
             Properties and values may vary per manufacturer.
         """
-        PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
+        if "vacation_mode" in self.properties_full.keys():
+            PropertyName    = "vacation_mode"   # because _clean property, 'set' is removed ... "set_vacation_mode"
+        elif "away_mode" in self.properties_full.keys():
+            PropertyName    = "away_mode"       # because _clean property, 'set' is removed ... "set_away_mode"
         PropertyValue   = 0
         self.set_property_value(PropertyName, PropertyValue)
         return True
@@ -718,7 +766,10 @@ class Softener(Device):
             Needs testing. Set vacation mode value from 255 (max) to 0 (default).
             Properties and values may vary per manufacturer.
         """
-        PropertyName    = "vacation_mode" # because _clean property, 'set' is removed ... "set_vacation_mode"
+        if "vacation_mode" in self.properties_full.keys():
+            PropertyName    = "vacation_mode"   # because _clean property, 'set' is removed ... "set_vacation_mode"
+        elif "away_mode" in self.properties_full.keys():
+            PropertyName    = "away_mode"       # because _clean property, 'set' is removed ... "set_away_mode"
         PropertyValue   = 0
         await self.async_set_property_value(PropertyName, PropertyValue)
         return True

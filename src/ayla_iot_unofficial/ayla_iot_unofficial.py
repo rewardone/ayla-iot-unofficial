@@ -253,7 +253,7 @@ class AylaApi:
         for d in self.list_devices():
             if   d["product_name"] in ["Vacuum","SharkIQ"]:
                 devices.append(Vacuum  (self, d, europe=self.europe))
-            elif d["product_name"] in ["Softener"]:
+            elif d["product_name"] in ["Softener","Smart HE"]:
                 devices.append(Softener(self, d, europe=self.europe))
             else:
                 devices.append(Device  (self, d, europe=self.europe))
