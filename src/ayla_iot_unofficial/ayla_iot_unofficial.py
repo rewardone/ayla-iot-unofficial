@@ -69,6 +69,8 @@ class AylaApi:
         self.user_field_url     = USER_FIELD_BASE
         self.ads_url            = ADS_BASE
         self.rulesservice_url   = RULESSERVICE_BASE
+        self._vacuum_devices    = ["Vacuum","SharkIQ"]
+        self._softener_devices  = ["Softener","Smart HE"]
 
     async def ensure_session(self) -> ClientSession:
         """Ensure that we have an aiohttp ClientSession"""
@@ -251,9 +253,9 @@ class AylaApi:
         """Retrieve a device object of devices. Ability to update with metadata. Synchronous."""
         devices = list()
         for d in self.list_devices():
-            if   d["product_name"] in ["Vacuum","SharkIQ"]:
+            if   d["product_name"] in self._vacuum_devices:
                 devices.append(Vacuum  (self, d, europe=self.europe))
-            elif d["product_name"] in ["Softener","Smart HE"]:
+            elif d["product_name"] in self._softener_devices:
                 devices.append(Softener(self, d, europe=self.europe))
             else:
                 devices.append(Device  (self, d, europe=self.europe))
@@ -267,9 +269,9 @@ class AylaApi:
         """Retrieve a device object of devices. Ability to update with metadata. Asynchronous."""
         devices = list()
         for d in await self.async_list_devices():
-            if   d["product_name"] in ["Vacuum","SharkIQ"]:
+            if   d["product_name"] in self._vacuum_devices:
                 devices.append(Vacuum  (self, d, europe=self.europe))
-            elif d["product_name"] in ["Softener"]:
+            elif d["product_name"] in self._softener_devices:
                 devices.append(Softener(self, d, europe=self.europe))
             else:
                 devices.append(Device  (self, d, europe=self.europe))
