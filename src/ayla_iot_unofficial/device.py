@@ -503,6 +503,7 @@ class Softener(Device):
             "salt_dosage_in_lbs"        : "salt_dosage",
             "sbt_salt_level_low"        : "low_salt_level",
             "set_vacation_mode"         : "set_away_mode",
+            "vacation_mode"             : "away_mode",                      # instead of ensuring it works with 'clean properties', just add this key in addition
             "total_gallons_since_install":"water_usage_since_install_1",
             "total_gallons_today"       : "total_water_usage_today_1",
             "unit_status"               : "unit_status_1",
