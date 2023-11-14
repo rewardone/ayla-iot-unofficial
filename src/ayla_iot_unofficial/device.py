@@ -775,6 +775,70 @@ class Softener(Device):
         await self.async_set_property_value(PropertyName, PropertyValue)
         return True
 
+    def start_bypass(self, presetTimeCode = 6):
+        """
+            Needs testing. Set standard_bypass value from 0 (default) to 255 (max).
+            Properties and values may vary per manufacturer.
+            1 = 30m
+            2 = 60m
+            3 = 90m
+            4 = 120m
+            5 = 180m
+            6 = indefinite
+        """
+        if "standard_bypass" in self.properties_full.keys():
+            PropertyName    = "standard_bypass"   # because _clean property, 'set' is removed ... "set_standard_bypass"
+            PropertyValue   = presetTimeCode
+            self.set_property_value(PropertyName, PropertyValue)
+            return True
+        else:
+            return False
+
+    async def async_start_bypass(self, presetTimeCode = 6):
+        """
+            Needs testing. Set standard_bypass value from 0 (default) to 255 (max).
+            Properties and values may vary per manufacturer.
+            1 = 30m
+            2 = 60m
+            3 = 90m
+            4 = 120m
+            5 = 180m
+            6 = indefinite
+        """
+        if "standard_bypass" in self.properties_full.keys():
+            PropertyName    = "standard_bypass"   # because _clean property, 'set' is removed ... "set_standard_bypass"
+            PropertyValue   = presetTimeCode
+            await self.async_set_property_value(PropertyName, PropertyValue)
+            return True
+        else:
+            return False
+
+    def stop_bypass(self):
+        """
+            Needs testing. Set standard_bypass value to default (255).
+            Properties and values may vary per manufacturer.
+        """
+        if "standard_bypass" in self.properties_full.keys():
+            PropertyName    = "standard_bypass"   # because _clean property, 'set' is removed ... "set_standard_bypass"
+            PropertyValue   = 255
+            self.set_property_value(PropertyName, PropertyValue)
+            return True
+        else:
+            return False
+
+    async def async_stop_bypass(self):
+        """
+            Needs testing. Set standard_bypass value to default (255).
+            Properties and values may vary per manufacturer.
+        """
+        if "standard_bypass" in self.properties_full.keys():
+            PropertyName    = "standard_bypass"   # because _clean property, 'set' is removed ... "set_standard_bypass"
+            PropertyValue   = 255
+            await self.async_set_property_value(PropertyName, PropertyValue)
+            return True
+        else:
+            return False
+
 class DevicePropertiesView(abc.Mapping):
     """Convenience API for device properties"""
 
