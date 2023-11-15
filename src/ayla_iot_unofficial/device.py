@@ -777,11 +777,11 @@ class Softener(Device):
 
     def start_bypass_mode(self):
         """Start indefinite bypass"""
-        return self.start_bypass_mode(6)
+        return self.start_bypass_timed_mode(6)
     
     async def async_start_bypass_mode(self):
         """Start indefinite bypass"""
-        return await self.async_start_bypass_mode(6)
+        return await self.start_bypass_timed_mode(6)
 
     def start_bypass_timed_mode(self, presetTimeCode = 1):
         """
