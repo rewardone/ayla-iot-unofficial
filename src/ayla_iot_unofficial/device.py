@@ -775,7 +775,15 @@ class Softener(Device):
         await self.async_set_property_value(PropertyName, PropertyValue)
         return True
 
-    def start_bypass(self, presetTimeCode = 6):
+    def start_bypass_mode(self):
+        """Start indefinite bypass"""
+        return self.start_bypass_mode(6)
+    
+    async def async_start_bypass_mode(self):
+        """Start indefinite bypass"""
+        return await self.async_start_bypass_mode(6)
+
+    def start_bypass_timed_mode(self, presetTimeCode = 1):
         """
             Needs testing. Set standard_bypass value from 0 (default) to 255 (max).
             Properties and values may vary per manufacturer.
@@ -794,7 +802,7 @@ class Softener(Device):
         else:
             return False
 
-    async def async_start_bypass(self, presetTimeCode = 6):
+    async def async_start_bypass_timed_mode(self, presetTimeCode = 1):
         """
             Needs testing. Set standard_bypass value from 0 (default) to 255 (max).
             Properties and values may vary per manufacturer.
@@ -813,7 +821,7 @@ class Softener(Device):
         else:
             return False
 
-    def stop_bypass(self):
+    def stop_bypass_mode(self):
         """
             Needs testing. Set standard_bypass value to default (255).
             Properties and values may vary per manufacturer.
@@ -826,7 +834,7 @@ class Softener(Device):
         else:
             return False
 
-    async def async_stop_bypass(self):
+    async def async_stop_bypass_mode(self):
         """
             Needs testing. Set standard_bypass value to default (255).
             Properties and values may vary per manufacturer.
