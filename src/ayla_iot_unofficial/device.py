@@ -823,7 +823,7 @@ class Softener(Device):
 
     def stop_bypass_mode(self):
         """
-            Needs testing. Set standard_bypass value to default (255).
+            Needs testing. Set standard_bypass value to off (0). Value will return automatically to 255.
             Properties and values may vary per manufacturer.
         """
         if "standard_bypass" in self.properties_full.keys():
@@ -836,12 +836,12 @@ class Softener(Device):
 
     async def async_stop_bypass_mode(self):
         """
-            Needs testing. Set standard_bypass value to default (255).
+            Needs testing. Set standard_bypass value to off (0). Value will return automatically to 255.
             Properties and values may vary per manufacturer.
         """
         if "standard_bypass" in self.properties_full.keys():
             PropertyName    = "standard_bypass"   # because _clean property, 'set' is removed ... "set_standard_bypass"
-            PropertyValue   = 255
+            PropertyValue   = 0
             await self.async_set_property_value(PropertyName, PropertyValue)
             return True
         else:
