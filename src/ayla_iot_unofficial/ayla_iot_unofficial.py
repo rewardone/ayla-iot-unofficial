@@ -70,7 +70,7 @@ class AylaApi:
         self.ads_url            = ADS_BASE
         self.rulesservice_url   = RULESSERVICE_BASE
         self._vacuum_devices    = ["Vacuum","SharkIQ"]
-        self._softener_devices  = ["Softener","Smart HE"]
+        self._softener_devices  = ["Softener","Smart HE","Water Softener"]
 
     async def ensure_session(self) -> ClientSession:
         """Ensure that we have an aiohttp ClientSession"""
