@@ -264,7 +264,10 @@ class FujitsuHVAC(Device):
 
     @op_mode.setter
     def op_mode(self, val: OpMode):
-        self.set_property_value("opetation_mode", val)
+        self.set_property_value("operation_mode", val)
+
+    async def async_set_op_mode(self, val: OpMode):
+        await self.async_set_property_value("operation_mode", val)
 
 #    @property
 #    def op_status(self) -> str:
@@ -281,6 +284,9 @@ class FujitsuHVAC(Device):
     @fan_speed.setter
     def fan_speed(self, val: FanSpeed):
         self.set_property_value("fan_speed", val)
+
+    async def async_set_fan_speed(self, val: FanSpeed):
+        await self.async_set_property_value("fan_speed", val)
 
     def _convert_sensed_temp_to_celsius(self, value: int) -> float:
         source_span = 9500 - 4000
@@ -301,6 +307,9 @@ class FujitsuHVAC(Device):
     @set_temp.setter
     def set_temp(self, val: float):
         self.set_property_value("adjust_temperature", int(val*10.0))
+
+    async def async_set_set_temp(self, val: float):
+        await self.async_set_property_value("adjust_temperature", int(val*10.0))
 
     @property
     def supported_swing_modes(self) -> List[SwingMode]:
@@ -336,6 +345,20 @@ class FujitsuHVAC(Device):
             self.vertical_swing = False
             self.horizontal_swing = False
 
+    async def async_set_swing_mode(self, val: SwingMode):
+        if val == SwingMode.SWING_BOTH:
+            await self.async_set_horizontal_swing(True)
+            await self.async_set_vertical_swing(True)
+        elif val == SwingMode.SWING_HORIZONTAL:
+            await self.async_set_horizontal_swing(True)
+            await self.async_set_vertical_swing(False)
+        elif val == SwingMode.SWING_VERTICAL:
+            await self.async_set_vertical_swing(True)
+            await self.async_set_horizontal_swing(False)
+        elif val == SwingMode.OFF:
+            await self.async_set_vertical_swing(False)
+            await self.async_set_horizontal_swing(False)
+
     @property
     def horizontal_swing(self) -> bool:
         if not self.has_capability(Capability.SWING_HORIZONTAL):
@@ -355,6 +378,15 @@ class FujitsuHVAC(Device):
             self.set_property_value("af_horizontal_move_step1", 3 if val else 0)
         
         self.set_property_value("af_horizontal_swing", 1 if val else 0)
+
+    async def async_set_horizontal_swing(self, val: bool):
+        if not self.has_capability(Capability.SWING_HORIZONTAL):
+            raise Exception("Device does not support horizontal swing")
+
+        if self.model == ModelType.B:
+            await self.async_set_property_value("af_horizontal_move_step1", 3 if val else 0)
+        
+        await self.async_set_property_value("af_horizontal_swing", 1 if val else 0)
         
 
     @property
@@ -376,3 +408,12 @@ class FujitsuHVAC(Device):
             self.set_property_value("af_horizontal_move_step1", 3 if val else 0)
         
         self.set_property_value("af_horizontal_swing", 1 if val else 0)
+    
+    async def async_set_vertical_swing(self, val: bool):
+        if not self.has_capability(Capability.SWING_VERTICAL):
+            raise Exception("Device does not support vertical swing")
+
+        if self.model == ModelType.B:
+            await self.async_set_property_value("af_horizontal_move_step1", 3 if val else 0)
+        
+        await self.async_set_property_value("af_horizontal_swing", 1 if val else 0)
