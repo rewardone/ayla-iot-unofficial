@@ -318,6 +318,10 @@ class FujitsuHVAC(Device):
         if SwingMode.SWING_HORIZONTAL in modes and SwingMode.SWING_VERTICAL in modes:
             modes.append(SwingMode.SWING_BOTH)
         
+        if len(modes) > 0:
+            modes.append(SwingMode.OFF)
+
+        
         return modes
 
     @property
