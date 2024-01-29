@@ -13,4 +13,6 @@ from .exc import (
     AylaReadOnlyPropertyError,
 )
 
+from .fujitsu_hvac import FujitsuHVAC
+
 __version__ = '1.2.4'
