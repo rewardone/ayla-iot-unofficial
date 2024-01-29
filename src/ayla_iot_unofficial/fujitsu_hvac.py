@@ -1,3 +1,4 @@
+from contextlib import suppress
 from typing import Dict, List, TYPE_CHECKING
 from enum import IntEnum, unique
 
@@ -253,7 +254,8 @@ class FujitsuHVAC(Device):
 
     @property 
     def supported_op_modes(self) -> List[OpMode]:
-        modes = [mode for mode in OpMode if self.has_capability(Capability[f"OP_{mode.name}"])]
+        with suppress(KeyError):
+            modes = [mode for mode in OpMode if self.has_capability(Capability[f"OP_{mode.name}"])]
         modes.append(OpMode.OFF)
         modes.append(OpMode.ON)
         return modes
