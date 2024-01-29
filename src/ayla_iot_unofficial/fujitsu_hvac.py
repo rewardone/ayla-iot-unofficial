@@ -314,7 +314,7 @@ class FujitsuHVAC(Device):
 
     @property
     def supported_swing_modes(self) -> List[SwingMode]:
-        modes = [mode for mode in SwingMode if self.has_capability(Capability[mode])]
+        modes = [mode for mode in SwingMode if getattr(Capability, mode.name, False) and self.has_capability(Capability[mode.name])]
         if SwingMode.SWING_HORIZONTAL in modes and SwingMode.SWING_VERTICAL in modes:
             modes.append(SwingMode.SWING_BOTH)
         
