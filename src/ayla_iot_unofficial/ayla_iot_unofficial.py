@@ -276,6 +276,8 @@ class AylaApi:
                 devices.append(Vacuum  (self, d, europe=self.europe))
             elif d["product_name"] in self._softener_devices:
                 devices.append(Softener(self, d, europe=self.europe))
+            elif FujitsuHVAC.supports(d):
+                devices.append(FujitsuHVAC(self, d, europe=self.europe))
             else:
                 devices.append(Device  (self, d, europe=self.europe))
         # if update:
