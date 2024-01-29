@@ -230,6 +230,10 @@ class FujitsuHVAC(Device):
         return self.properties_full["get_prop"]
         
     @property
+    def device_name(self) -> str:
+        return self.device_attr("device_name")
+
+    @property
     def capabilities(self) -> Dict[Capability, bool]:
         caps = self.device_attr("device_capabilities")
         ret = {}
