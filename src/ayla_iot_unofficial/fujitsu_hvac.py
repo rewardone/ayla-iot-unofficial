@@ -245,7 +245,7 @@ class FujitsuHVAC(Device):
 
         return ret
 
-    def _has_capability(self, capability: Capability) -> bool:
+    def has_capability(self, capability: Capability) -> bool:
         try:
             return self.capabilities[capability]
         except KeyError:
@@ -253,7 +253,7 @@ class FujitsuHVAC(Device):
 
     @property 
     def supported_op_modes(self) -> List[OpMode]:
-        modes = [mode for mode in OpMode if self._has_capability(Capability[f"OP_{mode.name}"])]
+        modes = [mode for mode in OpMode if self.has_capability(Capability[f"OP_{mode.name}"])]
         modes.append(OpMode.OFF)
         modes.append(OpMode.ON)
         return modes
@@ -272,7 +272,7 @@ class FujitsuHVAC(Device):
 
     @property
     def supported_fan_speeds(self) -> List[FanSpeed]:
-        return [speed for speed in FanSpeed if self._has_capability(Capability[f"FAN_{speed.name}"])]
+        return [speed for speed in FanSpeed if self.has_capability(Capability[f"FAN_{speed.name}"])]
         
     @property
     def fan_speed(self) -> FanSpeed:
@@ -304,7 +304,7 @@ class FujitsuHVAC(Device):
 
     @property
     def supported_swing_modes(self) -> List[SwingMode]:
-        modes = [mode for mode in SwingMode if self._has_capability(Capability[mode])]
+        modes = [mode for mode in SwingMode if self.has_capability(Capability[mode])]
         if SwingMode.SWING_HORIZONTAL in modes and SwingMode.SWING_VERTICAL in modes:
             modes.append(SwingMode.SWING_BOTH)
         
@@ -338,7 +338,7 @@ class FujitsuHVAC(Device):
 
     @property
     def horizontal_swing(self) -> bool:
-        if not self._has_capability(Capability.SWING_HORIZONTAL):
+        if not self.has_capability(Capability.SWING_HORIZONTAL):
             raise Exception("Device does not support horizontal swing")
         
         if self.model == ModelType.B:
@@ -348,7 +348,7 @@ class FujitsuHVAC(Device):
     
     @horizontal_swing.setter
     def horizontal_swing(self, val: bool):
-        if not self._has_capability(Capability.SWING_HORIZONTAL):
+        if not self.has_capability(Capability.SWING_HORIZONTAL):
             raise Exception("Device does not support horizontal swing")
 
         if self.model == ModelType.B:
@@ -359,7 +359,7 @@ class FujitsuHVAC(Device):
 
     @property
     def vertical_swing(self) -> bool:
-        if not self._has_capability(Capability.SWING_VERTICAL):
+        if not self.has_capability(Capability.SWING_VERTICAL):
             raise Exception("Device does not support vertical swing")
 
         if self.model == ModelType.B:
@@ -369,7 +369,7 @@ class FujitsuHVAC(Device):
     
     @horizontal_swing.setter
     def horizontal_swing(self, val: bool):
-        if not self._has_capability(Capability.SWING_VERTICAL):
+        if not self.has_capability(Capability.SWING_VERTICAL):
             raise Exception("Device does not support vertical swing")
 
         if self.model == ModelType.B:
