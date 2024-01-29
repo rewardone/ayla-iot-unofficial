@@ -254,8 +254,7 @@ class FujitsuHVAC(Device):
 
     @property 
     def supported_op_modes(self) -> List[OpMode]:
-        with suppress(KeyError):
-            modes = [mode for mode in OpMode if self.has_capability(Capability[f"OP_{mode.name}"])]
+        modes = [mode for mode in OpMode if getattr(Capability, f"OP_{mode.name}", False) and self.has_capability(Capability[f"OP_{mode.name}"])]
         modes.append(OpMode.OFF)
         modes.append(OpMode.ON)
         return modes
