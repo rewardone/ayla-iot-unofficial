@@ -400,21 +400,21 @@ class FujitsuHVAC(Device):
         
         return self.property_values["af_vertical_swing"] == 1
     
-    @horizontal_swing.setter
-    def horizontal_swing(self, val: bool):
+    @vertical_swing.setter
+    def vertical_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_VERTICAL):
             raise Exception("Device does not support vertical swing")
 
         if self.model == ModelType.B:
-            self.set_property_value("af_horizontal_move_step1", 3 if val else 0)
+            self.set_property_value("af_vertical_move_step1", 3 if val else 0)
         
-        self.set_property_value("af_horizontal_swing", 1 if val else 0)
+        self.set_property_value("af_vertical_swing", 1 if val else 0)
     
     async def async_set_vertical_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_VERTICAL):
             raise Exception("Device does not support vertical swing")
 
         if self.model == ModelType.B:
-            await self.async_set_property_value("af_horizontal_move_step1", 3 if val else 0)
+            await self.async_set_property_value("af_vertical_move_step1", 3 if val else 0)
         
-        await self.async_set_property_value("af_horizontal_swing", 1 if val else 0)
+        await self.async_set_property_value("af_vertical_swing", 1 if val else 0)
