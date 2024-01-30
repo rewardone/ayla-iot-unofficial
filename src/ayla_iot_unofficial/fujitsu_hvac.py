@@ -72,14 +72,14 @@ class FujitsuHVAC(Device):
         if not self.model:
             raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
 
-    async def async_update(self):
-        await super().async_update()
+    async def async_update(self, props: list[str] | None=None):
+        await super().async_update(props)
         await self.refresh_sensed_temp()
 
     async def poll_while(self):
         count = 0
         while count < 10 and self.property_values[PROP]:
-            self.async_update([PROP, DISPLAY_TEMP])
+            await self.async_update([PROP, DISPLAY_TEMP])
             count += 1
 
     async def refresh_sensed_temp(self):
