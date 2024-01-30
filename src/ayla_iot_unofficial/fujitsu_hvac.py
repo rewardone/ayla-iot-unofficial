@@ -33,6 +33,13 @@ from .fujitsu_consts import (
 if TYPE_CHECKING:
     from .ayla_iot_unofficial import AylaApi
 
+class DeviceNotSupportedError(Exception):
+    pass
+
+class SettingNotSupportedError(Exception):
+    pass
+
+
 def _convert_sensed_temp_to_celsius(value: int) -> float:
     source_span = MAX_SENSED_TEMP - MIN_SENSED_TEMP
     celsius_span = MAX_SENSED_CELSIUS - MIN_SENSED_CELSIUS 
@@ -57,7 +64,7 @@ class FujitsuHVAC(Device):
     def __init__(self, ayla_api: "AylaApi", device_dct: Dict, europe: bool = False):
         super().__init__(ayla_api, device_dct, europe)
         if OEM_MODEL not in device_dct:
-            raise Exception("This device is not supported by FujitsuHVAC.")
+            raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
 
         self.model = None
         for modeltype, devices in DEVICE_MAP.items():
@@ -65,7 +72,7 @@ class FujitsuHVAC(Device):
                 self.model = modeltype
 
         if not self.model:
-            raise Exception("This device is not supported by FujitsuHVAC.")
+            raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
 
     async def async_update(self):
         await super().async_update()
@@ -116,10 +123,14 @@ class FujitsuHVAC(Device):
 
     @op_mode.setter
     def op_mode(self, val: OpMode):
+        if val not in self.supported_op_modes:
+            raise SettingNotSupportedError(f"Device does not support operation mode {val.name}")
+
         self.set_property_value(OPERATION_MODE, val)
 
     async def async_set_op_mode(self, val: OpMode):
-        await self.async_set_property_value("operation_mode", val)
+        if val not in self.supported_op_modes:
+            raise SettingNotSupportedError(f"Device does not support operation mode {val.name}")
 
         await self.async_set_property_value(OPERATION_MODE, val)
 
@@ -133,9 +144,15 @@ class FujitsuHVAC(Device):
 
     @fan_speed.setter
     def fan_speed(self, val: FanSpeed):
+        if val not in self.supported_fan_speeds:
+            raise SettingNotSupportedError(f"Device does not support fan speed {val.name}")
+
         self.set_property_value(FAN_SPEED, val)
 
     async def async_set_fan_speed(self, val: FanSpeed):
+        if val not in self.supported_fan_speeds:
+            raise SettingNotSupportedError(f"Device does not support fan speed {val.name}")
+
         await self.async_set_property_value(FAN_SPEED, val)
 
     @property
@@ -178,6 +195,9 @@ class FujitsuHVAC(Device):
 
     @swing_mode.setter
     def swing_mode(self, val: SwingMode):
+        if val not in self.supported_swing_modes:
+            raise SettingNotSupportedError(f"Device does not support swing mode {val.name}")
+
         if val == SwingMode.SWING_BOTH:
             self.horizontal_swing = True
             self.vertical_swing = True
@@ -192,6 +212,9 @@ class FujitsuHVAC(Device):
             self.horizontal_swing = False
 
     async def async_set_swing_mode(self, val: SwingMode):
+        if val not in self.supported_swing_modes:
+            raise SettingNotSupportedError(f"Device does not support swing mode {val.name}")
+
         if val == SwingMode.SWING_BOTH:
             await self.async_set_horizontal_swing(True)
             await self.async_set_vertical_swing(True)
@@ -208,7 +231,7 @@ class FujitsuHVAC(Device):
     @property
     def horizontal_swing(self) -> bool:
         if not self.has_capability(Capability.SWING_HORIZONTAL):
-            raise Exception("Device does not support horizontal swing")
+            raise SettingNotSupportedError("Device does not support horizontal swing")
         
         if self.model == ModelType.B:
             return self.property_values["af_horizontal_move_step1"] == 3
@@ -218,7 +241,7 @@ class FujitsuHVAC(Device):
     @horizontal_swing.setter
     def horizontal_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_HORIZONTAL):
-            raise Exception("Device does not support horizontal swing")
+            raise SettingNotSupportedError("Device does not support horizontal swing")
 
         if self.model == ModelType.B:
             self.set_property_value("af_horizontal_move_step1", 3 if val else 0)
@@ -227,7 +250,7 @@ class FujitsuHVAC(Device):
 
     async def async_set_horizontal_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_HORIZONTAL):
-            raise Exception("Device does not support horizontal swing")
+            raise SettingNotSupportedError("Device does not support horizontal swing")
 
         if self.model == ModelType.B:
             await self.async_set_property_value("af_horizontal_move_step1", 3 if val else 0)
@@ -238,7 +261,7 @@ class FujitsuHVAC(Device):
     @property
     def vertical_swing(self) -> bool:
         if not self.has_capability(Capability.SWING_VERTICAL):
-            raise Exception("Device does not support vertical swing")
+            raise SettingNotSupportedError("Device does not support vertical swing")
 
         if self.model == ModelType.B:
             return self.property_values["af_vertical_move_step1"] == 3
@@ -248,7 +271,7 @@ class FujitsuHVAC(Device):
     @vertical_swing.setter
     def vertical_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_VERTICAL):
-            raise Exception("Device does not support vertical swing")
+            raise SettingNotSupportedError("Device does not support vertical swing")
 
         if self.model == ModelType.B:
             self.set_property_value("af_vertical_move_step1", 3 if val else 0)
@@ -257,7 +280,7 @@ class FujitsuHVAC(Device):
     
     async def async_set_vertical_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_VERTICAL):
-            raise Exception("Device does not support vertical swing")
+            raise SettingNotSupportedError("Device does not support vertical swing")
 
         if self.model == ModelType.B:
             await self.async_set_property_value("af_vertical_move_step1", 3 if val else 0)
