@@ -10,8 +10,8 @@ FAN_SPEED = "fan_speed"
 ADJUST_TEMPERATURE = "adjust_temperature"
 AF_HORIZONTAL_MOVE_STEP1 = "af_horizontal_move_step1"
 AF_HORIZONTAL_SWING = "af_horizontal_swing"
-AF_VERTICAL_MOVE_STEP1 = "af_veritcal_move_step1"
-AF_VERTICAL_SWING = "af_veritcal_swing"
+AF_VERTICAL_MOVE_STEP1 = "af_vertical_move_step1"
+AF_VERTICAL_SWING = "af_vertical_swing"
 
 MIN_TEMP_HEAT = 16.0
 MAX_TEMP_HEAT = 30.0
