@@ -214,21 +214,19 @@ class FujitsuHVAC(Device):
         except KeyError:
             raise AttributeError
 
-    def poll_while(self):
+    async def async_update(self):
+        await super().async_update()
+        await self.refresh_sensed_temp()
+
+    async def poll_while(self):
         count = 0
-        while count < 10:
-            self.update(["prop"])
-            print(self.properties_full["prop"])
-            if self.properties_full["prop"]["datapoint"]["echo"] or self.properties_full["prop"]["datapoint"]["value"] != True:
-                return
+        while count < 10 and self.property_values["prop"]:
+            self.async_update(["prop", "display_temperature"])
             count += 1
     
-    def refresh_sensed_temp(self):
-        end_point = self.set_property_endpoint('get_prop')
-        data = {'datapoint': {'value': 1}}
-        resp = self.ayla_api.self_request('post', end_point, json=data)
-        self.poll_while()
-        return self.properties_full["get_prop"]
+    async def refresh_sensed_temp(self):
+        await self.async_set_property_value("prop", 1)
+        await self.poll_while()
         
     @property
     def device_name(self) -> str:
@@ -412,7 +410,7 @@ class FujitsuHVAC(Device):
         if self.model == ModelType.B:
             self.set_property_value("af_vertical_move_step1", 3 if val else 0)
         
-        self.set_property_value("af_vertical_swing", 1 if val else 0)
+        self.set_property_value("af_vertical_swing", val)
     
     async def async_set_vertical_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_VERTICAL):
@@ -421,4 +419,4 @@ class FujitsuHVAC(Device):
         if self.model == ModelType.B:
             await self.async_set_property_value("af_vertical_move_step1", 3 if val else 0)
         
-        await self.async_set_property_value("af_vertical_swing", 1 if val else 0)
+        await self.async_set_property_value("af_vertical_swing", val)
