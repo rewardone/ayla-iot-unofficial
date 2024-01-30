@@ -1,6 +1,4 @@
-from contextlib import suppress
-from typing import Dict, List, TYPE_CHECKING
-from enum import IntEnum, unique
+from typing import Dict,  TYPE_CHECKING
 
 from .device import Device
 from .fujitsu_consts import (
@@ -83,11 +81,11 @@ class FujitsuHVAC(Device):
         while count < 10 and self.property_values[PROP]:
             self.async_update([PROP, DISPLAY_TEMP])
             count += 1
-    
+
     async def refresh_sensed_temp(self):
         await self.async_set_property_value(PROP, True)
         await self.poll_while()
-        
+
     @property
     def device_name(self) -> str:
         return self.property_values[DEVICE_NAME]
@@ -110,13 +108,18 @@ class FujitsuHVAC(Device):
         except KeyError:
             return False
 
-    @property 
-    def supported_op_modes(self) -> List[OpMode]:
-        modes = [mode for mode in OpMode if getattr(Capability, f"OP_{mode.name}", False) and self.has_capability(Capability[f"OP_{mode.name}"])]
+    @property
+    def supported_op_modes(self) -> list[OpMode]:
+        modes = [
+            mode
+            for mode in OpMode
+            if getattr(Capability, f"OP_{mode.name}", False)
+            and self.has_capability(Capability[f"OP_{mode.name}"])
+        ]
         modes.append(OpMode.OFF)
         modes.append(OpMode.ON)
         return modes
-    
+
     @property
     def op_mode(self) -> OpMode:
         return OpMode(self.property_values[OPERATION_MODE])
@@ -135,9 +138,13 @@ class FujitsuHVAC(Device):
         await self.async_set_property_value(OPERATION_MODE, val)
 
     @property
-    def supported_fan_speeds(self) -> List[FanSpeed]:
-        return [speed for speed in FanSpeed if self.has_capability(Capability[f"FAN_{speed.name}"])]
-        
+    def supported_fan_speeds(self) -> list[FanSpeed]:
+        return [
+            speed
+            for speed in FanSpeed
+            if self.has_capability(Capability[f"FAN_{speed.name}"])
+        ]
+
     @property
     def fan_speed(self) -> FanSpeed:
         return FanSpeed(self.property_values[FAN_SPEED])
@@ -157,7 +164,15 @@ class FujitsuHVAC(Device):
 
     @property
     def sensed_temp(self) -> float:
-        return round(self._convert_sensed_temp_to_celsius(int(self.device_attr("display_temperature")))*2)/2
+        return (
+            round(
+                _convert_sensed_temp_to_celsius(
+                    int(self.property_values[DISPLAY_TEMP])
+                )
+                * 2
+            )
+            / 2
+        )
 
     def temperature_range_for_mode(self, mode: OpMode) -> (float, float):
         if mode not in self.supported_op_modes:
@@ -184,15 +199,19 @@ class FujitsuHVAC(Device):
         await self.async_set_property_value(ADJUST_TEMPERATURE, int(val * 10.0))
 
     @property
-    def supported_swing_modes(self) -> List[SwingMode]:
-        modes = [mode for mode in SwingMode if getattr(Capability, mode.name, False) and self.has_capability(Capability[mode.name])]
+    def supported_swing_modes(self) -> list[SwingMode]:
+        modes = [
+            mode
+            for mode in SwingMode
+            if getattr(Capability, mode.name, False)
+            and self.has_capability(Capability[mode.name])
+        ]
         if SwingMode.SWING_HORIZONTAL in modes and SwingMode.SWING_VERTICAL in modes:
             modes.append(SwingMode.SWING_BOTH)
-        
+
         if len(modes) > 0:
             modes.append(SwingMode.OFF)
 
-        
         return modes
 
     @property
