@@ -232,57 +232,38 @@ class FujitsuHVAC(Device):
     def horizontal_swing(self) -> bool:
         if not self.has_capability(Capability.SWING_HORIZONTAL):
             raise SettingNotSupportedError("Device does not support horizontal swing")
-        
-        if self.model == ModelType.B:
-            return self.property_values["af_horizontal_move_step1"] == 3
-        
-        return self.property_values["af_horizontal_swing"] == 1
-    
+
+        return self.property_values[HORIZ_SWING_PARAM_MAP[self.model]] == SWING_VAL_MAP[self.model][True]
+
     @horizontal_swing.setter
     def horizontal_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_HORIZONTAL):
             raise SettingNotSupportedError("Device does not support horizontal swing")
 
-        if self.model == ModelType.B:
-            self.set_property_value("af_horizontal_move_step1", 3 if val else 0)
-        
-        self.set_property_value("af_horizontal_swing", 1 if val else 0)
+        self.set_property_value(HORIZ_SWING_PARAM_MAP[self.model], SWING_VAL_MAP[self.model][val])
 
     async def async_set_horizontal_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_HORIZONTAL):
             raise SettingNotSupportedError("Device does not support horizontal swing")
 
-        if self.model == ModelType.B:
-            await self.async_set_property_value("af_horizontal_move_step1", 3 if val else 0)
-        
-        await self.async_set_property_value("af_horizontal_swing", 1 if val else 0)
-        
+        await self.async_set_property_value(HORIZ_SWING_PARAM_MAP[self.model], SWING_VAL_MAP[self.model][val])
 
     @property
     def vertical_swing(self) -> bool:
         if not self.has_capability(Capability.SWING_VERTICAL):
             raise SettingNotSupportedError("Device does not support vertical swing")
 
-        if self.model == ModelType.B:
-            return self.property_values["af_vertical_move_step1"] == 3
-        
-        return self.property_values["af_vertical_swing"] == 1
-    
+        return self.property_values[VERT_SWING_PARAM_MAP[self.model]] == SWING_VAL_MAP[self.model][True]
+
     @vertical_swing.setter
     def vertical_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_VERTICAL):
             raise SettingNotSupportedError("Device does not support vertical swing")
 
-        if self.model == ModelType.B:
-            self.set_property_value("af_vertical_move_step1", 3 if val else 0)
-        
-        self.set_property_value("af_vertical_swing", val)
-    
+        self.set_property_value(VERT_SWING_PARAM_MAP[self.model], SWING_VAL_MAP[self.model][val])
+
     async def async_set_vertical_swing(self, val: bool):
         if not self.has_capability(Capability.SWING_VERTICAL):
             raise SettingNotSupportedError("Device does not support vertical swing")
 
-        if self.model == ModelType.B:
-            await self.async_set_property_value("af_vertical_move_step1", 3 if val else 0)
-        
-        await self.async_set_property_value("af_vertical_swing", val)
+        await self.async_set_property_value(VERT_SWING_PARAM_MAP[self.model], SWING_VAL_MAP[self.model][val])
