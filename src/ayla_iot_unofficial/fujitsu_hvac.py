@@ -67,15 +67,6 @@ class FujitsuHVAC(Device):
         if not self.model:
             raise Exception("This device is not supported by FujitsuHVAC.")
 
-    def device_attr(self, name: str) -> any:
-        if name not in SUPPORTED_PROPS_MAP[self.model]:
-            raise AttributeError
-
-        try:
-            return self.property_values[name]
-        except KeyError:
-            raise AttributeError
-
     async def async_update(self):
         await super().async_update()
         await self.refresh_sensed_temp()
