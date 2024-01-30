@@ -159,6 +159,19 @@ class FujitsuHVAC(Device):
     def sensed_temp(self) -> float:
         return round(self._convert_sensed_temp_to_celsius(int(self.device_attr("display_temperature")))*2)/2
 
+    def temperature_range_for_mode(self, mode: OpMode) -> (float, float):
+        if mode not in self.supported_op_modes:
+            raise SettingNotSupportedError(f"Device does not support operation mode {mode.name}")
+        
+        if mode in OpMode.HEAT:
+            return (MIN_TEMP_HEAT, MAX_TEMP_HEAT)
+
+        return (MIN_TEMP_COOL, MAX_TEMP_COOL)
+
+    @property
+    def temperature_range(self) -> (float, float):
+        return self.temperature_range_for_mode(self.op_mode)
+
     @property
     def set_temp(self) -> float:
         return float(self.property_values[ADJUST_TEMPERATURE]) / 10.0
