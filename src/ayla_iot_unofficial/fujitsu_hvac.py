@@ -178,7 +178,7 @@ class FujitsuHVAC(Device):
         if mode not in self.supported_op_modes:
             raise SettingNotSupportedError(f"Device does not support operation mode {mode.name}")
         
-        if mode in OpMode.HEAT:
+        if mode == OpMode.HEAT:
             return (MIN_TEMP_HEAT, MAX_TEMP_HEAT)
 
         return (MIN_TEMP_COOL, MAX_TEMP_COOL)
