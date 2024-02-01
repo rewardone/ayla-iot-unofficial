@@ -1,6 +1,7 @@
-from typing import Dict,  TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
+from enum import Enum
 
-from .device import Device
+from .device import Device, PropertyName, PropertyValue, AylaReadOnlyPropertyError
 from .fujitsu_consts import (
     OEM_MODEL,
     PROP,
@@ -71,6 +72,25 @@ class FujitsuHVAC(Device):
 
         if not self.model:
             raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
+
+    async def async_set_property_value(self, property_name: PropertyName, value: PropertyValue):
+        """Update a property async. Override the parent version since it adds SET_ in front of the property name."""
+        if isinstance(property_name, Enum):
+            property_name = property_name.value
+        if isinstance(value, Enum):
+            value = value.value
+        
+        if self.properties_full.get(property_name, {}).get('read_only'):
+            raise AylaReadOnlyPropertyError(f'{property_name} is read only')
+        else:
+            """ Get the name of the property. Case sizing for 'SET' varies """
+            property_name = self.properties_full.get(property_name).get("name")
+
+        end_point = self.set_property_endpoint(property_name)
+        data = {'datapoint': {'value': value}}
+        async with await self.ayla_api.async_request('post', end_point, json=data) as resp:
+            resp_data = await resp.json()
+        self.properties_full[property_name].update(resp_data)
 
     async def async_update(self, props: list[str] | None=None):
         await super().async_update(props)
