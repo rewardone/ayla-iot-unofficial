@@ -24,6 +24,7 @@ MAX_SENSED_TEMP = 9500
 MIN_SENSED_CELSIUS = -10
 MAX_SENSED_CELSIUS = 45
 
+
 @unique
 class ModelType(IntEnum):
     A = 0
@@ -52,19 +53,19 @@ DEVICE_MAP = {
 HORIZ_SWING_PARAM_MAP = {
     ModelType.B: AF_HORIZONTAL_MOVE_STEP1,
     ModelType.A: AF_HORIZONTAL_SWING,
-    ModelType.F: AF_HORIZONTAL_SWING
+    ModelType.F: AF_HORIZONTAL_SWING,
 }
 
 VERT_SWING_PARAM_MAP = {
     ModelType.B: AF_VERTICAL_MOVE_STEP1,
     ModelType.A: AF_VERTICAL_SWING,
-    ModelType.F: AF_VERTICAL_SWING
+    ModelType.F: AF_VERTICAL_SWING,
 }
 
 SWING_VAL_MAP = {
     ModelType.B: {True: 3, False: 0},
     ModelType.A: {True: 1, False: 0},
-    ModelType.F: {True: 1, False: 0}
+    ModelType.F: {True: 1, False: 0},
 }
 
 
