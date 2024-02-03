@@ -1,4 +1,6 @@
-from typing import Dict, TYPE_CHECKING
+from asyncio import sleep
+from typing import Any, Dict, TYPE_CHECKING
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 
 from .device import Device, PropertyName, PropertyValue, AylaReadOnlyPropertyError
@@ -73,7 +75,7 @@ class FujitsuHVAC(Device):
         if not self.model:
             raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
 
-    async def async_set_property_value(self, property_name: PropertyName, value: PropertyValue):
+    async def async_set_property_value(self, property_name: PropertyName, value: PropertyValue, poll=False, keep_polling_value=None):
         """Update a property async. Override the parent version since it adds SET_ in front of the property name."""
         if isinstance(property_name, Enum):
             property_name = property_name.value
@@ -88,23 +90,47 @@ class FujitsuHVAC(Device):
 
         end_point = self.set_property_endpoint(property_name)
         data = {'datapoint': {'value': value}}
+        if poll:
+            data['datapoint']['echo'] = 0
+
         async with await self.ayla_api.async_request('post', end_point, json=data) as resp:
             resp_data = await resp.json()
-        self.properties_full[property_name].update(resp_data)
+
+        if poll:
+            await self.poll_while(property_name, keep_polling_value)
+        else:
+            self.properties_full[property_name].update(resp_data)
+
 
     async def async_update(self, props: list[str] | None=None):
         await super().async_update(props)
         await self.refresh_sensed_temp()
 
-    async def poll_while(self):
+    async def get_last_datapoint(self, property: str) -> dict[str, Any] | None:
+        endpoint = self.set_property_endpoint(property)
+        extra_param = {"limit": 1}
+        async with await self.ayla_api.async_request("get", endpoint, params=extra_param) as resp:
+            data = await resp.json()
+
+        if len(data) > 0:
+            return data[-1]["datapoint"]
+        
+        return None
+
+    async def poll_while(self, property: str, keep_polling_value: Any):
         count = 0
-        while count < 10 and self.property_values[PROP]:
-            await self.async_update([PROP, DISPLAY_TEMP])
+        datapoint = await self.get_last_datapoint(property)
+        while count < 10:
+            datapoint = await self.get_last_datapoint(property)
+            if datapoint and datapoint["value"] != keep_polling_value and datapoint["echo"] == True:
+                break
+
             count += 1
+            await sleep(1)
 
     async def refresh_sensed_temp(self):
-        await self.async_set_property_value(PROP, True)
-        await self.poll_while()
+        await self.async_set_property_value(PROP, 1, poll=True, keep_polling_value=1)
+        await super().async_update([DISPLAY_TEMP])
 
     @property
     def device_name(self) -> str:
