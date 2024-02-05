@@ -1,3 +1,4 @@
+from time import sleep as syncsleep
 from asyncio import sleep
 from typing import Any, Dict, TYPE_CHECKING
 from datetime import datetime, timedelta, timezone
@@ -75,6 +76,30 @@ class FujitsuHVAC(Device):
         if not self.model:
             raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
 
+    def set_property_value(self, property_name: PropertyName, value: PropertyValue, poll=False, keep_polling_value=None):
+        """Update a property"""
+        if isinstance(property_name, Enum):
+            property_name = property_name.value
+        if isinstance(value, Enum):
+            value = value.value
+        
+        if self.properties_full.get(property_name, {}).get('read_only'):
+            raise AylaReadOnlyPropertyError(f'{property_name} is read only')
+        else:
+            """ Get the name of the property. Case sizing for 'SET' varies """
+            property_name = self.properties_full.get(property_name).get("name")
+
+        end_point = self.set_property_endpoint(property_name)
+        data = {'datapoint': {'value': value}}
+        if poll:
+            data['datapoint']['echo'] = 0
+
+        resp = self.ayla_api.self_request('post', end_point, json=data)
+        if poll:
+            self.poll_while(property_name, keep_polling_value)
+        else:
+            self.properties_full[property_name].update(resp)
+
     async def async_set_property_value(self, property_name: PropertyName, value: PropertyValue, poll=False, keep_polling_value=None):
         """Update a property async. Override the parent version since it adds SET_ in front of the property name."""
         if isinstance(property_name, Enum):
@@ -97,7 +122,7 @@ class FujitsuHVAC(Device):
             resp_data = await resp.json()
 
         if poll:
-            await self.poll_while(property_name, keep_polling_value)
+            await self.async_poll_while(property_name, keep_polling_value)
         else:
             self.properties_full[property_name].update(resp_data)
 
@@ -106,7 +131,15 @@ class FujitsuHVAC(Device):
         await super().async_update(props)
         await self.refresh_sensed_temp()
 
-    async def get_last_datapoint(self, property: str) -> dict[str, Any] | None:
+    def get_last_datapoint(self, property: str) -> dict[str, Any] | None:
+        endpoint = self.set_property_endpoint(property)
+        extra_param = {"limit": 1}
+        data = self.ayla_api.self_request("get", endpoint, params=extra_param).json()
+
+        if len(data) > 0:
+            return data[-1]["datapoint"]
+
+    async def async_get_last_datapoint(self, property: str) -> dict[str, Any] | None:
         endpoint = self.set_property_endpoint(property)
         extra_param = {"limit": 1}
         async with await self.ayla_api.async_request("get", endpoint, params=extra_param) as resp:
@@ -117,7 +150,18 @@ class FujitsuHVAC(Device):
         
         return None
 
-    async def poll_while(self, property: str, keep_polling_value: Any):
+    def poll_while(self, property: str, keep_polling_value: Any):
+        count = 0
+        datapoint = self.get_last_datapoint(property)
+        while count < 10:
+            datapoint = self.get_last_datapoint(property)
+            if datapoint and datapoint["value"] != keep_polling_value and datapoint["echo"] == True:
+                break
+
+            count += 1
+            syncsleep(1)
+
+    async def async_poll_while(self, property: str, keep_polling_value: Any):
         count = 0
         datapoint = await self.get_last_datapoint(property)
         while count < 10:
