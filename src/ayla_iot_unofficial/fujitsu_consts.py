@@ -1,5 +1,8 @@
 from enum import IntEnum, unique
 
+FGLAIR_APP_ID = "CJIOSP-id"
+FGLAIR_APP_SECRET = "CJIOSP-Vb8MQL_lFiYQ7DKjN0eCFXznKZE"
+
 OEM_MODEL = "oem_model"
 PROP = "prop"
 DISPLAY_TEMP = "display_temperature"
