@@ -97,10 +97,16 @@ class AylaApi:
 
     def _set_credentials(self, status_code: int, login_result: Dict):
         """Update the internal credentials store. This tracks current bearer token and data needed for token refresh."""
-        if status_code   == 404:
-            raise AylaAuthError(login_result["error"]["message"] + " (Confirm app_id and app_secret are correct)")
-        elif status_code == 401:
-            raise AylaAuthError(login_result["error"]["message"])
+        if status_code in [404, 401]:
+            if "message" in login_result["error"]:
+                msg = login_result["error"]["message"]
+            else:
+                msg = login_result["error"]
+
+            if status_code == 404:
+                msg += "  (Confirm app_id and app_secret are correct)"
+            
+            raise AylaAuthError(msg)
 
         self._access_token    = login_result["access_token"]
         self._refresh_token   = login_result["refresh_token"]
