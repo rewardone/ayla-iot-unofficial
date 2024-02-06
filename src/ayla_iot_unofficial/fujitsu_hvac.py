@@ -163,9 +163,9 @@ class FujitsuHVAC(Device):
 
     async def async_poll_while(self, property: str, keep_polling_value: Any):
         count = 0
-        datapoint = await self.get_last_datapoint(property)
+        datapoint = await self.async_get_last_datapoint(property)
         while count < 10:
-            datapoint = await self.get_last_datapoint(property)
+            datapoint = await self.async_get_last_datapoint(property)
             if datapoint and datapoint["value"] != keep_polling_value and datapoint["echo"] == True:
                 break
 
