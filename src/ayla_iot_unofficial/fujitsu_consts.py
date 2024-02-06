@@ -1,7 +1,7 @@
 from enum import IntEnum, unique
 
-AYLA_APP_ID = "CJIOSP-id"
-AYLA_APP_SECRET = "CJIOSP-Vb8MQL_lFiYQ7DKjN0eCFXznKZE"
+FGLAIR_APP_ID = "CJIOSP-id"
+FGLAIR_APP_SECRET = "CJIOSP-Vb8MQL_lFiYQ7DKjN0eCFXznKZE"
 
 OEM_MODEL = "oem_model"
 PROP = "prop"
