@@ -7,10 +7,10 @@ Documentation can be found at:
  - https://docs.aylanetworks.com/cloud-services/api-browser/
 """
 
-from aiohttp    import ClientSession             # async http
-from requests   import post, request, Response   # http request library
-from datetime   import datetime, timedelta       # datetime operations
-from typing     import Dict, List, Optional      # object types
+from aiohttp    import ClientSession, ClientTimeout    # async http
+from requests   import post, request, Response         # http request library
+from datetime   import datetime, timedelta             # datetime operations
+from typing     import Dict, List, Optional            # object types
 
 from .const import (
     EU_USER_FIELD_BASE,
@@ -18,7 +18,8 @@ from .const import (
     EU_RULESSERVICE_BASE,
     USER_FIELD_BASE,
     ADS_BASE,
-    RULESSERVICE_BASE
+    RULESSERVICE_BASE,
+    DEFAULT_TIMEOUT
 )
 
 # Custom error handling 
@@ -35,12 +36,12 @@ from .fujitsu_hvac import FujitsuHVAC
 
 _session = None
 
-def new_ayla_api(username: str, password: str, app_id: str, app_secret: str, websession: Optional[ClientSession] = None, europe: bool = False):
+def new_ayla_api(username: str, password: str, app_id: str, app_secret: str, websession: Optional[ClientSession] = None, europe: bool = False, timeout=DEFAULT_TIMEOUT):
     """Get an AylaApi object"""
     if europe:
-        return AylaApi(username, password, app_id, app_secret, websession=websession, europe=europe)
+        return AylaApi(username, password, app_id, app_secret, websession=websession, europe=europe, timeout=timeout)
     else:
-        return AylaApi(username, password, app_id, app_secret, websession=websession)
+        return AylaApi(username, password, app_id, app_secret, websession=websession, timeout=timeout)
 
 
 class AylaApi:
@@ -53,7 +54,8 @@ class AylaApi:
             app_id: str,
             app_secret: str,
             websession: Optional[ClientSession] = None,
-            europe: bool = False):
+            europe: bool = False,
+            timeout: int=DEFAULT_TIMEOUT):
         self._email             = username      # username should always be an email address
         self._password          = password
         self._access_token      = None          # type: Optional[str]
@@ -70,13 +72,14 @@ class AylaApi:
         self.user_field_url     = USER_FIELD_BASE
         self.ads_url            = ADS_BASE
         self.rulesservice_url   = RULESSERVICE_BASE
+        self.timeout            = timeout
         self._vacuum_devices    = ["Vacuum","SharkIQ"]
         self._softener_devices  = ["Softener","Smart HE","Water Softener"]
 
     async def ensure_session(self) -> ClientSession:
         """Ensure that we have an aiohttp ClientSession"""
         if self.websession is None:
-            self.websession = ClientSession()
+            self.websession = ClientSession(timeout=ClientTimeout(total=self.timeout))
         return self.websession
 
     @property
@@ -216,7 +219,7 @@ class AylaApi:
     def self_request(self, method: str, url: str, **kwargs) -> Response:
         """Perform an arbitrary request using the requests library synchronously"""
         headers = self._get_headers(kwargs)
-        return request(method, url, headers=headers, **kwargs)
+        return request(method, url, headers=headers, timeout=self.timeout, **kwargs)
 
     async def async_request(self, http_method: str, url: str, **kwargs):
         """Perform an arbitrary request using the aiohttp library asynchronously"""
