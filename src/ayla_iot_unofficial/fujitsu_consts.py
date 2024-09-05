@@ -4,7 +4,7 @@ FGLAIR_APP_ID = "CJIOSP-id"
 FGLAIR_APP_SECRET = "CJIOSP-Vb8MQL_lFiYQ7DKjN0eCFXznKZE"
 
 OEM_MODEL = "oem_model"
-PROP = "prop"
+REFRESH = "refresh"
 DISPLAY_TEMP = "display_temperature"
 DEVICE_NAME = "device_name"
 DEVICE_CAPABILITIES = "device_capabilities"
