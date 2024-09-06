@@ -376,7 +376,7 @@ class FujitsuHVAC(Device):
     @property
     def horizontal_swing(self) -> bool:
         if not self.has_capability(Capability.SWING_HORIZONTAL):
-            raise SettingNotSupportedError("Device does not support horizontal swing")
+            return False
 
         return self.property_values[HORIZ_SWING_PARAM_MAP[self.model]] == SWING_VAL_MAP[self.model][True]
 
@@ -396,7 +396,7 @@ class FujitsuHVAC(Device):
     @property
     def vertical_swing(self) -> bool:
         if not self.has_capability(Capability.SWING_VERTICAL):
-            raise SettingNotSupportedError("Device does not support vertical swing")
+            return False
 
         return self.property_values[VERT_SWING_PARAM_MAP[self.model]] == SWING_VAL_MAP[self.model][True]
 
