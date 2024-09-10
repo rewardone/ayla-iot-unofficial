@@ -7,7 +7,7 @@ from enum import Enum
 from .device import Device, PropertyName, PropertyValue, AylaReadOnlyPropertyError
 from .fujitsu_consts import (
     OEM_MODEL,
-    PROP,
+    REFRESH,
     DISPLAY_TEMP,
     DEVICE_NAME,
     DEVICE_CAPABILITIES,
@@ -136,7 +136,7 @@ class FujitsuHVAC(Device):
         if poll:
             data['datapoint']['echo'] = 0
 
-        async with await self.ayla_api.async_request('post', end_point, json=data) as resp:
+        async with await self.ayla_api.async_request('post', end_point, json=data, headers={'x-ayla-source': 'Mobile'}) as resp:
             resp_data = await resp.json()
 
         if poll:
@@ -196,7 +196,7 @@ class FujitsuHVAC(Device):
             await sleep(1)
 
     async def refresh_sensed_temp(self):
-        await self.async_set_property_value(PROP, 1, poll=True, keep_polling_value=1)
+        await self.async_set_property_value(REFRESH, 1)
         await super().async_update([DISPLAY_TEMP])
 
     @property

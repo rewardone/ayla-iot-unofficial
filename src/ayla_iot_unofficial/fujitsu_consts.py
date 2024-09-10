@@ -7,7 +7,7 @@ FGLAIR_APP_CREDENTIALS = {
 }
 
 OEM_MODEL = "oem_model"
-PROP = "prop"
+REFRESH = "refresh"
 DISPLAY_TEMP = "display_temperature"
 DEVICE_NAME = "device_name"
 DEVICE_CAPABILITIES = "device_capabilities"
