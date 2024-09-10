@@ -1,7 +1,10 @@
 from enum import IntEnum, unique
 
-FGLAIR_APP_ID = "CJIOSP-id"
-FGLAIR_APP_SECRET = "CJIOSP-Vb8MQL_lFiYQ7DKjN0eCFXznKZE"
+FGLAIR_APP_CREDENTIALS = {
+    "CN": ("FGLairField-cn-id", "FGLairField-cn-zezg7Y60YpAvy3HPwxvWLnd4Oh4"),
+    "EU": ("FGLair-eu-id", "FGLair-eu-gpFbVBRoiJ8E3QWJ-QRULLL3j3U"),
+    "default": ("CJIOSP-id", "CJIOSP-Vb8MQL_lFiYQ7DKjN0eCFXznKZE")
+}
 
 OEM_MODEL = "oem_model"
 PROP = "prop"
