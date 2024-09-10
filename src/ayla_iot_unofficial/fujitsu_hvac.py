@@ -41,6 +41,8 @@ class DeviceNotSupportedError(Exception):
 class SettingNotSupportedError(Exception):
     pass
 
+class DeviceOffline(Exception):
+    pass
 
 def _convert_sensed_temp_to_celsius(value: int) -> float:
     source_span = MAX_SENSED_TEMP - MIN_SENSED_TEMP
@@ -49,6 +51,15 @@ def _convert_sensed_temp_to_celsius(value: int) -> float:
     value_scaled = float(value - MIN_SENSED_TEMP) / float(source_span)
 
     return MIN_SENSED_CELSIUS + (value_scaled * celsius_span)
+
+def check_online(func):
+    def wrapped(self, *args, **kwargs):
+        if not self.is_online():
+            raise DeviceOffline
+        
+        return func(self, *args, **kwargs)
+
+    return wrapped
 
 class FujitsuHVAC(Device):
     @staticmethod
@@ -76,6 +87,12 @@ class FujitsuHVAC(Device):
         if not self.model:
             raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
 
+        self._connection_status = device_dct["connection_status"]
+
+    def is_online(self):
+        return self._connection_status != 'Offline'
+
+    @check_online
     def set_property_value(self, property_name: PropertyName, value: PropertyValue, poll=False, keep_polling_value=None):
         """Update a property"""
         if isinstance(property_name, Enum):
@@ -100,6 +117,7 @@ class FujitsuHVAC(Device):
         else:
             self.properties_full[property_name].update(resp)
 
+    @check_online
     async def async_set_property_value(self, property_name: PropertyName, value: PropertyValue, poll=False, keep_polling_value=None):
         """Update a property async. Override the parent version since it adds SET_ in front of the property name."""
         if isinstance(property_name, Enum):
@@ -127,6 +145,11 @@ class FujitsuHVAC(Device):
             self.properties_full[property_name].update(resp_data)
 
 
+    @check_online
+    def update(self, props: list[str] | None=None):
+        super().update(props)
+
+    @check_online
     async def async_update(self, props: list[str] | None=None):
         await super().async_update(props)
         await self.refresh_sensed_temp()
