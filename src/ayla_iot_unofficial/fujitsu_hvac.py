@@ -61,6 +61,15 @@ def check_online(func):
 
     return wrapped
 
+def check_online_async(func):
+    async def wrapped(self, *args, **kwargs):
+        if not self.is_online():
+            raise DeviceOffline
+        
+        return await  func(self, *args, **kwargs)
+
+    return wrapped
+
 class FujitsuHVAC(Device):
     @staticmethod
     def supports(device: Dict) -> bool:
@@ -117,7 +126,7 @@ class FujitsuHVAC(Device):
         else:
             self.properties_full[property_name].update(resp)
 
-    @check_online
+    @check_online_async
     async def async_set_property_value(self, property_name: PropertyName, value: PropertyValue, poll=False, keep_polling_value=None):
         """Update a property async. Override the parent version since it adds SET_ in front of the property name."""
         if isinstance(property_name, Enum):
@@ -149,7 +158,7 @@ class FujitsuHVAC(Device):
     def update(self, props: list[str] | None=None):
         super().update(props)
 
-    @check_online
+    @check_online_async
     async def async_update(self, props: list[str] | None=None):
         await super().async_update(props)
         await self.refresh_sensed_temp()
