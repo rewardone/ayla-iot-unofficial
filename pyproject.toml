@@ -11,7 +11,7 @@ version = "1.4.1"
 authors = [
   { name="Reward One", email="rewardone.com@gmail.com" },
 ]
-description = "Python API for Ayla IoT products (crevetor fork)"
+description = "Python API for Ayla IoT products"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -25,5 +25,5 @@ dynamic = ["dependencies"]
 dependencies = {file = ["requirements.txt"]}
 
 [project.urls]
-"Homepage" = "https://github.com/crevetor/ayla-iot-unofficial"
-"Bug Tracker" = "https://github.com/crevetor/ayla-iot-unofficial/issues"
+"Homepage" = "https://github.com/rewardone/ayla-iot-unofficial"
+"Bug Tracker" = "https://github.com/rewardone/ayla-iot-unofficial/issues"
