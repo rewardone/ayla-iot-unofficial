@@ -1,8 +1,8 @@
 from enum import IntEnum, unique
 
 FGLAIR_APP_CREDENTIALS = {
-    "CN": ("FGLairField-cn-id", "FGLairField-cn-zezg7Y60YpAvy3HPwxvWLnd4Oh4"),
-    "EU": ("FGLair-eu-id", "FGLair-eu-gpFbVBRoiJ8E3QWJ-QRULLL3j3U"),
+    "cn": ("FGLairField-cn-id", "FGLairField-cn-zezg7Y60YpAvy3HPwxvWLnd4Oh4"),
+    "eu": ("FGLair-eu-id", "FGLair-eu-gpFbVBRoiJ8E3QWJ-QRULLL3j3U"),
     "default": ("CJIOSP-id", "CJIOSP-Vb8MQL_lFiYQ7DKjN0eCFXznKZE")
 }
 
