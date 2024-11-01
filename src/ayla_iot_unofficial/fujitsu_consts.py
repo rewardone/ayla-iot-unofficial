@@ -74,6 +74,12 @@ SWING_VAL_MAP = {
     ModelType.F: {True: 1, False: 0},
 }
 
+SENSED_TEMP_SUPPORTED = {
+    ModelType.A: True,
+    ModelType.B: False,
+    ModelType.F: True,
+}
+
 
 @unique
 class FanSpeed(IntEnum):

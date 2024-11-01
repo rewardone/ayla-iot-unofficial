@@ -16,6 +16,7 @@ from .fujitsu_consts import (
     FAN_SPEED,
     HORIZ_SWING_PARAM_MAP,
     VERT_SWING_PARAM_MAP,
+    SENSED_TEMP_SUPPORTED,
     SWING_VAL_MAP,
     MIN_SENSED_TEMP,
     MAX_SENSED_TEMP,
@@ -205,8 +206,9 @@ class FujitsuHVAC(Device):
             await sleep(1)
 
     async def refresh_sensed_temp(self):
-        await self.async_set_property_value(REFRESH, 1)
-        await super().async_update([DISPLAY_TEMP])
+        if SENSED_TEMP_SUPPORTED[self.model]:
+            await self.async_set_property_value(REFRESH, 1)
+            await super().async_update([DISPLAY_TEMP])
 
     @property
     def device_name(self) -> str:
@@ -285,16 +287,18 @@ class FujitsuHVAC(Device):
         await self.async_set_property_value(FAN_SPEED, val)
 
     @property
-    def sensed_temp(self) -> float:
-        return (
-            round(
-                _convert_sensed_temp_to_celsius(
-                    int(self.property_values[DISPLAY_TEMP])
+    def sensed_temp(self) -> float | None:
+        if SENSED_TEMP_SUPPORTED[self.model]:
+            return (
+                round(
+                    _convert_sensed_temp_to_celsius(
+                        int(self.property_values[DISPLAY_TEMP])
+                    )
+                    * 2
                 )
-                * 2
+                / 2
             )
-            / 2
-        )
+        return None
 
     def temperature_range_for_mode(self, mode: OpMode) -> (float, float):
         if mode not in self.supported_op_modes:
