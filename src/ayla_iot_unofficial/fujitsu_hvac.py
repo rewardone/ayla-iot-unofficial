@@ -12,6 +12,7 @@ from .fujitsu_consts import (
     DEVICE_NAME,
     DEVICE_CAPABILITIES,
     OPERATION_MODE,
+    OUTDOOR_TEMPERATURE,
     ADJUST_TEMPERATURE,
     FAN_SPEED,
     HORIZ_SWING_PARAM_MAP,
@@ -299,6 +300,21 @@ class FujitsuHVAC(Device):
                 / 2
             )
         return None
+
+    @property
+    def outdoor_temperature(self) -> float | None:
+        if OUTDOOR_TEMPERATURE in self.property_values:
+            return (
+                round(
+                    _convert_sensed_temp_to_celsius(
+                        int(self.property_values[OUTDOOR_TEMPERATURE])
+                    )
+                    * 2
+                )
+                / 2
+            )
+        return None
+        
 
     def temperature_range_for_mode(self, mode: OpMode) -> (float, float):
         if mode not in self.supported_op_modes:
