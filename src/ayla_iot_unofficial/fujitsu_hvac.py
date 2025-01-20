@@ -340,7 +340,7 @@ class FujitsuHVAC(Device):
         self.set_property_value(ADJUST_TEMPERATURE, int((round(val*2.0) / 2.0) * 10.0))
 
     async def async_set_set_temp(self, val: float):
-        await self.async_set_property_value(ADJUST_TEMPERATURE, int(val * 10.0))
+        await self.async_set_property_value(ADJUST_TEMPERATURE, int((round(val*2.0) / 2.0) * 10.0))
 
     @property
     def supported_swing_modes(self) -> list[SwingMode]:
