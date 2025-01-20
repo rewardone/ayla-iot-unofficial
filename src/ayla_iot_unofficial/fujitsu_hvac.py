@@ -335,7 +335,9 @@ class FujitsuHVAC(Device):
 
     @set_temp.setter
     def set_temp(self, val: float):
-        self.set_property_value(ADJUST_TEMPERATURE, int(val * 10.0))
+        # Sometimes F to C conversion doesn't land on a half degree multiple
+        # so round to the nearest 0.5C
+        self.set_property_value(ADJUST_TEMPERATURE, int((round(val*2.0) / 2.0) * 10.0))
 
     async def async_set_set_temp(self, val: float):
         await self.async_set_property_value(ADJUST_TEMPERATURE, int(val * 10.0))
