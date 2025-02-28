@@ -265,7 +265,7 @@ class AylaApi:
         for d in self.list_devices():
             if   d["product_name"] in self._vacuum_devices:
                 devices.append(Vacuum  (self, d, europe=self.europe))
-            elif d["product_name"] in self._softener_devices:
+            elif d["product_name"] in self._softener_devices or "Softener" in d["product_name"]:
                 devices.append(Softener(self, d, europe=self.europe))
             elif FujitsuHVAC.supports(d):
                 devices.append(FujitsuHVAC(self, d, europe=self.europe))
