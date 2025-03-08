@@ -303,7 +303,8 @@ class FujitsuHVAC(Device):
 
     @property
     def outdoor_temperature(self) -> float | None:
-        if OUTDOOR_TEMPERATURE in self.property_values:
+        if (OUTDOOR_TEMPERATURE in self.property_values
+                and self.property_values[OUTDOOR_TEMPERATURE] is not None):
             return (
                 round(
                     _convert_sensed_temp_to_celsius(
