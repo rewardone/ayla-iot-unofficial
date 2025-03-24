@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ayla_iot_unofficial"
-version = "1.4.7"
+version = "1.4.8"
 authors = [
   { name="Reward One", email="rewardone.com@gmail.com" },
 ]
