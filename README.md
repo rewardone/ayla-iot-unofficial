@@ -33,7 +33,7 @@ pip install ayla-iot-unofficial
 Requires typical http interaction and datatype packages like requests, aiohttp, ujson
 
 ## User Requirements
-Reqiures a username and password (typically a smart device's app login credentials)
+Reqiures either a username and password (typically a smart device's app login credentials) or a token (retrieved from device manufacturer's login flow)
 Requires an app_id and app_secret (granted by Ayla to the smart device's app for operation/integration)
 
 The app_id and app_secret may need to be obtained from proxy traffic or other method.
@@ -81,6 +81,17 @@ softener = devices[1]
 
 softener.capacity_remaining_gallons
 softener.set_vacation_mode()
+```
+
+### Login via token
+
+Some devices like the De'Longhi DDSX Dehumidifier are accessed by logging into the manufacturer's app which then generates a token for logging into Ayla Networks.
+
+```python
+TOKEN = 'st2...'
+
+ayla_api = new_ayla_api(None, None, APP_ID, APP_SECRET, token=TOKEN)
+ayla_api.sign_in()
 ```
 
 ## License
