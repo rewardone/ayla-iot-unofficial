@@ -85,12 +85,12 @@ softener.set_vacation_mode()
 
 ### Login via token
 
-Some devices like the De'Longhi DDSX Dehumidifier are accessed by logging into the manufacturer's app which then generates a token for logging into Ayla Networks.
+Some devices like the De'Longhi DDSX Dehumidifier are accessed by logging into the manufacturer's app which then generates an SSO token for logging into Ayla Networks.
 
 ```python
-TOKEN = 'st2...'
+SSO_TOKEN = 'st2...'
 
-ayla_api = new_ayla_api(None, None, APP_ID, APP_SECRET, token=TOKEN)
+ayla_api = new_ayla_api_sso(SSO_TOKEN, APP_ID, APP_SECRET)
 ayla_api.sign_in()
 ```
 

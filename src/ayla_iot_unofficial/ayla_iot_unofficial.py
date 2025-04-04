@@ -36,12 +36,16 @@ from .fujitsu_hvac import FujitsuHVAC
 
 _session = None
 
-def new_ayla_api(username: Optional[str], password: Optional[str], app_id: str, app_secret: str, websession: Optional[ClientSession] = None, europe: bool = False, timeout=DEFAULT_TIMEOUT, token: str = None):
+def new_ayla_api(username: str, password: str, app_id: str, app_secret: str, websession: Optional[ClientSession] = None, europe: bool = False, timeout=DEFAULT_TIMEOUT):
     """Get an AylaApi object"""
-    if token is None and (username is None or password is None):
-        raise ValueError("either username/password or token is required")
+    if europe:
+        return AylaApi(username, password, app_id, app_secret, websession=websession, europe=europe, timeout=timeout)
+    else:
+        return AylaApi(username, password, app_id, app_secret, websession=websession, timeout=timeout)
 
-    return AylaApi(username, password, app_id, app_secret, websession=websession, europe=europe, timeout=timeout, token=token)
+def new_ayla_api_sso(sso_token: str, app_id: str, app_secret: str, websession: Optional[ClientSession] = None, europe: bool = False, timeout=DEFAULT_TIMEOUT):
+    """Get an AylaApi object"""
+    return AylaApi(None, None, app_id, app_secret, websession=websession, europe=europe, timeout=timeout, sso_token=sso_token)
 
 
 class AylaApi:
@@ -56,10 +60,10 @@ class AylaApi:
             websession: Optional[ClientSession] = None,
             europe: bool = False,
             timeout: int=DEFAULT_TIMEOUT,
-            token: Optional[str] = None):
+            sso_token: Optional[str] = None):
         self._email             = username      # username should always be an email address
         self._password          = password
-        self._token             = token
+        self._sso_token         = sso_token
         self._access_token      = None          # type: Optional[str]
         self._refresh_token     = None          # type: Optional[str]
         self._auth_expiration   = None          # type: Optional[datetime]
@@ -99,7 +103,7 @@ class AylaApi:
     def _login_data_token(self) -> Dict[str, str]:
         """Prettily formatted data for the login flow using token"""
         return {
-            "token": self._token,
+            "token": self._sso_token,
             "app_id": self._app_id,
             "app_secret": self._app_secret
         }
@@ -112,7 +116,7 @@ class AylaApi:
     def _set_credentials(self, status_code: int, login_result: Dict):
         """Update the internal credentials store. This tracks current bearer token and data needed for token refresh."""
         if status_code in [422, 404, 401]:
-            # 422 status with `errors` property in body if token is invalid
+            # 422 status with `errors` property in body if SSO token is invalid
             if "errors" in login_result:
                 msg = login_result["errors"]
             elif "message" in login_result["error"]:
@@ -136,14 +140,14 @@ class AylaApi:
 
     def sign_in(self):
         """Authenticate to Ayla API synchronously using a POST with credentials."""
-        if self._token is not None:
-            endpoint = f"{self.eu_user_field_url if self.europe else self.user_field_url}/api/v1/token_sign_in"
-            resp = post(endpoint, data=self._login_data_token)
-            self._set_credentials(resp.status_code, resp.json())
-            return
-
         login_data = self._login_data   # get a map for JSON formatting
         resp = post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_in.json", json=login_data)
+        self._set_credentials(resp.status_code, resp.json())
+
+    def sso_sign_in(self):
+        """Authenticate to Ayla API synchronously using an SSO token."""
+        endpoint = f"{self.eu_user_field_url if self.europe else self.user_field_url}/api/v1/token_sign_in"
+        resp = post(endpoint, data=self._login_data_token)
         self._set_credentials(resp.status_code, resp.json())
 
     def refresh_auth(self):
@@ -155,15 +159,15 @@ class AylaApi:
     async def async_sign_in(self):
         """Authenticate to Ayla API asynchronously using a POST with credentials.."""
         session = await self.ensure_session()
-
-        if self._token is not None:
-            endpoint = f"{self.eu_user_field_url if self.europe else self.user_field_url}/api/v1/token_sign_in"
-            async with session.post(endpoint, data=self._login_data_token) as resp:
-                self._set_credentials(resp.status, await resp.json())
-            return
-
         login_data = self._login_data
         async with session.post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_in.json", json=login_data) as resp:
+            self._set_credentials(resp.status, await resp.json())
+
+    async def async_sso_sign_in(self):
+        """Authenticate to Ayla API asynchronously using an SSO token."""
+        session = await self.ensure_session()
+        endpoint = f"{self.eu_user_field_url if self.europe else self.user_field_url}/api/v1/token_sign_in"
+        async with session.post(endpoint, data=self._login_data_token) as resp:
             self._set_credentials(resp.status, await resp.json())
 
     async def async_refresh_auth(self):
