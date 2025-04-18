@@ -230,7 +230,13 @@ class Device:
         if isinstance(value, Enum):
             value = value.value
 
-        end_point = self.set_property_endpoint(f'SET_{property_name}')
+        if self.properties_full.get(property_name, {}).get('read_only'):
+            raise AylaReadOnlyPropertyError(f'{property_name} is read only')
+        else:
+            """ Get the name of the property. Case sizing for 'SET' varies """
+            property_name = self.properties_full.get(property_name).get("name")
+
+        end_point = self.set_property_endpoint(property_name)
         data = {'datapoint': {'value': value}}
         async with await self.ayla_api.async_request('post', end_point, json=data) as resp:
             resp_data = await resp.json()
