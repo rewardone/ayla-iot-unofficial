@@ -43,21 +43,27 @@ def new_ayla_api(username: str, password: str, app_id: str, app_secret: str, web
     else:
         return AylaApi(username, password, app_id, app_secret, websession=websession, timeout=timeout)
 
+def new_ayla_api_sso(sso_token: str, app_id: str, app_secret: str, websession: Optional[ClientSession] = None, europe: bool = False, timeout=DEFAULT_TIMEOUT):
+    """Get an AylaApi object"""
+    return AylaApi(None, None, app_id, app_secret, websession=websession, europe=europe, timeout=timeout, sso_token=sso_token)
+
 
 class AylaApi:
     """Simple Ayla Networks API wrapper"""
 
     def __init__(
             self,
-            username: str,
-            password: str,
+            username: Optional[str],
+            password: Optional[str],
             app_id: str,
             app_secret: str,
             websession: Optional[ClientSession] = None,
             europe: bool = False,
-            timeout: int=DEFAULT_TIMEOUT):
+            timeout: int=DEFAULT_TIMEOUT,
+            sso_token: Optional[str] = None):
         self._email             = username      # username should always be an email address
         self._password          = password
+        self._sso_token         = sso_token
         self._access_token      = None          # type: Optional[str]
         self._refresh_token     = None          # type: Optional[str]
         self._auth_expiration   = None          # type: Optional[datetime]
@@ -94,14 +100,26 @@ class AylaApi:
         }
 
     @property
+    def _login_data_token(self) -> Dict[str, str]:
+        """Prettily formatted data for the login flow using token"""
+        return {
+            "token": self._sso_token,
+            "app_id": self._app_id,
+            "app_secret": self._app_secret
+        }
+
+    @property
     def _sign_out_data(self) -> Dict:
         """Payload for the sign_out call"""
         return {"user": {"access_token": self._access_token}}
 
     def _set_credentials(self, status_code: int, login_result: Dict):
         """Update the internal credentials store. This tracks current bearer token and data needed for token refresh."""
-        if status_code in [404, 401]:
-            if "message" in login_result["error"]:
+        if status_code in [422, 404, 401]:
+            # 422 status with `errors` property in body if SSO token is invalid
+            if "errors" in login_result:
+                msg = login_result["errors"]
+            elif "message" in login_result["error"]:
                 msg = login_result["error"]["message"]
             else:
                 msg = login_result["error"]
@@ -126,6 +144,12 @@ class AylaApi:
         resp = post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_in.json", json=login_data)
         self._set_credentials(resp.status_code, resp.json())
 
+    def sso_sign_in(self):
+        """Authenticate to Ayla API synchronously using an SSO token."""
+        endpoint = f"{self.eu_user_field_url if self.europe else self.user_field_url}/api/v1/token_sign_in"
+        resp = post(endpoint, data=self._login_data_token)
+        self._set_credentials(resp.status_code, resp.json())
+
     def refresh_auth(self):
         """Refresh the authentication synchronously using object tracked refresh token."""
         refresh_data = {"user": {"refresh_token": self._refresh_token}}
@@ -137,6 +161,13 @@ class AylaApi:
         session = await self.ensure_session()
         login_data = self._login_data
         async with session.post(f"{self.eu_user_field_url if self.europe else self.user_field_url:s}/users/sign_in.json", json=login_data) as resp:
+            self._set_credentials(resp.status, await resp.json())
+
+    async def async_sso_sign_in(self):
+        """Authenticate to Ayla API asynchronously using an SSO token."""
+        session = await self.ensure_session()
+        endpoint = f"{self.eu_user_field_url if self.europe else self.user_field_url}/api/v1/token_sign_in"
+        async with session.post(endpoint, data=self._login_data_token) as resp:
             self._set_credentials(resp.status, await resp.json())
 
     async def async_refresh_auth(self):
