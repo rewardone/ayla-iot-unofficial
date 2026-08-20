@@ -46,6 +46,16 @@ class SettingNotSupportedError(Exception):
 class DeviceOffline(Exception):
     pass
 
+def _unsupported_device_message(device: Dict) -> str:
+    return (
+        "This device is not supported by FujitsuHVAC "
+        f"(device_name={device.get('device_name')!r}, "
+        f"product_name={device.get('product_name')!r}, "
+        f"dsn={device.get('dsn')!r}, "
+        f"oem_model={device.get(OEM_MODEL)!r}, "
+        f"model={device.get('model')!r})"
+    )
+
 def _convert_sensed_temp_to_celsius(value: int) -> float:
     source_span = MAX_SENSED_TEMP - MIN_SENSED_TEMP
     celsius_span = MAX_SENSED_CELSIUS - MIN_SENSED_CELSIUS 
@@ -88,15 +98,15 @@ class FujitsuHVAC(Device):
     def __init__(self, ayla_api: "AylaApi", device_dct: Dict, europe: bool = False):
         super().__init__(ayla_api, device_dct, europe)
         if OEM_MODEL not in device_dct:
-            raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
+            raise DeviceNotSupportedError(_unsupported_device_message(device_dct))
 
         self.model = None
         for modeltype, devices in DEVICE_MAP.items():
             if device_dct[OEM_MODEL] in devices:
                 self.model = modeltype
 
-        if not self.model:
-            raise DeviceNotSupportedError("This device is not supported by FujitsuHVAC.")
+        if self.model is None:
+            raise DeviceNotSupportedError(_unsupported_device_message(device_dct))
 
         self._connection_status = device_dct["connection_status"]
 
