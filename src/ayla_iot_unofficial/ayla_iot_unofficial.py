@@ -80,7 +80,7 @@ class AylaApi:
         self.rulesservice_url   = RULESSERVICE_BASE
         self.timeout            = timeout
         self._vacuum_devices    = ["Vacuum","SharkIQ"]
-        self._softener_devices  = ["Softener","Smart HE","Water Softener"]
+        self._softener_devices  = ["Softener","Smart HE","Smart Modernity","Water Softener"]
 
     async def ensure_session(self) -> ClientSession:
         """Ensure that we have an aiohttp ClientSession"""
