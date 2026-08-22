@@ -51,7 +51,6 @@ def _unsupported_device_message(device: Dict) -> str:
         "This device is not supported by FujitsuHVAC "
         f"(device_name={device.get('device_name')!r}, "
         f"product_name={device.get('product_name')!r}, "
-        f"dsn={device.get('dsn')!r}, "
         f"oem_model={device.get(OEM_MODEL)!r}, "
         f"model={device.get('model')!r})"
     )
